@@ -7,7 +7,7 @@ package db
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	//_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mxk/go-sqlite/sqlite3"
 	"log"
 	"reflect"
 )
