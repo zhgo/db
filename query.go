@@ -142,7 +142,7 @@ func (q *Query) Insert(data *[]interface{}) (int64, error) {
 		itemType := itemValue.Type()
 		for i := 0; i < itemType.NumField(); i++ {
 			itemField := itemType.Field(i)
-			if !itemField.Anonymous && itemField.Tag.Get("json") != "" && itemField.Tag.Get("pk") == "" {
+			if !itemField.Anonymous && itemField.Tag.Get("pk") == "" { // && itemField.Tag.Get("json") != ""
 				sli = append(sli, "?")
 				v := itemValue.FieldByIndex([]int{i})
 				insertArgsValue.Set(reflect.Append(insertArgsValue, v))
