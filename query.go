@@ -21,7 +21,7 @@ type Query struct {
     Table Table
 
     // Sql
-    sql Sql
+    Sql Sql
 }
 
 // Sql struct
@@ -67,7 +67,7 @@ func (q *Query) Fields(fields ...string) *Query {
         fields = append(fields, "*")
     }
 
-    q.sql.Select = strings.Join(fields, ", ")
+    q.Sql.Select = strings.Join(fields, ", ")
     return q
 }
 
@@ -100,15 +100,15 @@ func (q *Query) Or(field string, m string, val ...interface{}) *Query {
 func (q *Query) whereNode(l string, field string, m string, val ...interface{}) *Query {
     switch m {
         case "=", "<", "<=", ">", ">=", "<>", "LIKE":
-        q.sql.Where += fmt.Sprintf(" %s %s %s ?", l, field, m)
-        q.sql.Args = append(q.sql.Args, val[0])
+        q.Sql.Where += fmt.Sprintf(" %s %s %s ?", l, field, m)
+        q.Sql.Args = append(q.Sql.Args, val[0])
         case "IN", "NOT IN":
         w := make([]string, len(val))
         for i, v := range val {
             w[i] = "?"
-            q.sql.Args = append(q.sql.Args, v)
+            q.Sql.Args = append(q.Sql.Args, v)
         }
-        q.sql.Where += fmt.Sprintf(" %s %s %s (%s) ", l, field, m, strings.Join(w, ","))
+        q.Sql.Where += fmt.Sprintf(" %s %s %s (%s) ", l, field, m, strings.Join(w, ","))
     }
 
     return q
@@ -138,6 +138,24 @@ func (q *Query) Lock() *Query {
     return q
 }
 
+// connect all sql department to a corect sql string.
+func (q *Query) toString() string {
+    //create sql
+    var sel string
+    if len(q.Sql.Select) > 0 {
+        sel = q.Sql.Select //返回[]map[string]interface{}
+    } else {
+        sel = fmt.Sprintf("a.`%s`, a.`%s`", q.Table.Primary, strings.Join(q.Table.Fields, "`, a.`")) //返回[]EntityStruct
+    }
+
+    sql := fmt.Sprintf("SELECT %s FROM %s a %s WHERE 1 %s %s %s %s LIMIT %d, %d %s", sel, q.Table.Name, q.Sql.Join, q.Sql.Where, q.Sql.Order, q.Sql.Group, q.Sql.Having, q.Sql.Offset, q.Sql.Rows, q.Sql.ForUpdate)
+
+    log.Printf("%s\n", sql)
+    log.Printf("%#v\n", q.Sql.Args)
+
+    return sql
+}
+
 // First row, first column
 func (q *Query) Scaler(ptr interface{}) error {
 
@@ -146,20 +164,32 @@ func (q *Query) Scaler(ptr interface{}) error {
 
 // get one row
 func (q *Query) Row(ptr interface{}) error {
-    //get first row only
-    q.sql.Offset = 0
-    q.sql.Rows = 1
+    if q.DB == nil {
+        return errors.New("DB is nil")
+    }
 
-    return q.DB.Row(ptr, q.toString(), q.sql.Args)
+    //get first row only
+    q.Sql.Offset = 0
+    q.Sql.Rows = 1
+
+    return q.DB.Row(ptr, q.toString(), q.Sql.Args)
 }
 
 // get all rows, return []struct or []map[string]interface{} or [][]interface{}
 func (q *Query) Rows(ptr interface{}) error {
-    return q.DB.Rows(ptr, q.toString(), q.sql.Args)
+    if q.DB == nil {
+        return errors.New("DB is nil")
+    }
+
+    return q.DB.Rows(ptr, q.toString(), q.Sql.Args)
 }
 
 // Insert
 func (q *Query) Insert(data *[]interface{}) (int64, error) {
+    if q.DB == nil {
+        return 0, errors.New("DB is nil")
+    }
+
     if len(*data) == 0 {
         err := errors.New("empty insert data")
         log.Printf("%s\n", err)
@@ -204,6 +234,10 @@ func (q *Query) Insert(data *[]interface{}) (int64, error) {
 
 // Update
 func (q *Query) Update(data *map[string]interface{}) (int64, error) {
+    if q.DB == nil {
+        return 0, errors.New("DB is nil")
+    }
+
     //convert map to sql string
     updateBody := []string{}
     updateArgs := []interface{}{}
@@ -213,9 +247,9 @@ func (q *Query) Update(data *map[string]interface{}) (int64, error) {
         updateArgs = append(updateArgs, element)
     }
 
-    updateSql := fmt.Sprintf("UPDATE %s SET %s WHERE 1 %s", q.Table.Name, strings.Join(updateBody, ", "), q.sql.Where)
+    updateSql := fmt.Sprintf("UPDATE %s SET %s WHERE 1 %s", q.Table.Name, strings.Join(updateBody, ", "), q.Sql.Where)
 
-    updateArgs = append(updateArgs, q.sql.Args...)
+    updateArgs = append(updateArgs, q.Sql.Args...)
 
     log.Printf("%s\n", updateSql)
     log.Printf("%#v\n", updateArgs)
@@ -231,34 +265,20 @@ func (q *Query) Update(data *map[string]interface{}) (int64, error) {
 
 // Delete
 func (q *Query) Delete() (int64, error) {
-    deleteSql := fmt.Sprintf("DELETE FROM %s WHERE 1 %s", q.Table.Name, q.sql.Where)
+    if q.DB == nil {
+        return 0, errors.New("DB is nil")
+    }
+
+    deleteSql := fmt.Sprintf("DELETE FROM %s WHERE 1 %s", q.Table.Name, q.Sql.Where)
 
     log.Printf("%s\n", deleteSql)
-    log.Printf("%#v\n", q.sql.Args)
+    log.Printf("%#v\n", q.Sql.Args)
 
-    result, err := q.DB.Exec(deleteSql, q.sql.Args)
+    result, err := q.DB.Exec(deleteSql, q.Sql.Args)
     if err != nil {
         log.Printf("%s\n", err)
         return 0, err
     }
 
     return result.RowsAffected()
-}
-
-// connect all sql department to a corect sql string.
-func (q *Query) toString() string {
-    //create sql
-    var sel string
-    if len(q.sql.Select) > 0 {
-        sel = q.sql.Select //返回[]map[string]interface{}
-    } else {
-        sel = fmt.Sprintf("a.`%s`, a.`%s`", q.Table.Primary, strings.Join(q.Table.Fields, "`, a.`")) //返回[]EntityStruct
-    }
-
-    sql := fmt.Sprintf("SELECT %s FROM %s a %s WHERE 1 %s %s %s %s LIMIT %d, %d %s", sel, q.Table.Name, q.sql.Join, q.sql.Where, q.sql.Order, q.sql.Group, q.sql.Having, q.sql.Offset, q.sql.Rows, q.sql.ForUpdate)
-
-    log.Printf("%s\n", sql)
-    log.Printf("%#v\n", q.sql.Args)
-
-    return sql
 }

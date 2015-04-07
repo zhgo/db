@@ -18,11 +18,7 @@ type Model struct {
 }
 
 func NewModelQuery(m *Model) *Query {
-    db, s := Databases[m.Module]
-    if s == false {
-        return nil //errors.New("DB config not found.")
-    }
-
+    db, _ := Databases[m.Module]
     return &Query{DB: db, Table: m.Table}
 }
 
@@ -33,7 +29,7 @@ func (m *Model) Select(fields ...string) *Query {
         fields = append(fields, "*")
     }
 
-    q.sql.Select = strings.Join(fields, ", ")
+    q.Sql.Select = strings.Join(fields, ", ")
     return q
 }
 
