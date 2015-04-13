@@ -25,15 +25,18 @@ type DB struct {
 
     // profiling
     Profiling bool
+
+    // Follow
+    Follow string
 }
 
 // Database list
-var Databases map[string]*DB
+var Connections map[string]*DB = make(map[string]*DB)
 
 // DB instance
 var dbObjects map[string]*sql.DB = make(map[string]*sql.DB)
 
-// connect to database
+// Connect to database
 func (e *DB) connect() error {
     db, s := dbObjects[e.Name]
     if s == false || db == nil { //err := e.Module.DB.Ping(); err != nil
@@ -53,8 +56,8 @@ func (e *DB) connect() error {
 }
 
 // get one row.
-func (e *DB) Row(dataPtr interface{}, sql string, args []interface{}) error {
-    rows, err := e.queryRows(sql, args)
+func (e *DB) Row(ptr interface{}, sql string, args []interface{}) error {
+    rows, err := e.rows(sql, args)
     if err != nil {
         log.Printf("%s\n", err)
         return err
@@ -70,7 +73,7 @@ func (e *DB) Row(dataPtr interface{}, sql string, args []interface{}) error {
 
     columnsLen := len(columns)
 
-    dataKind, scanPtr, scanArgs, err := scanVariable(dataPtr, columnsLen, false)
+    dataKind, scanPtr, scanArgs, err := scanVariable(ptr, columnsLen, false)
     if err != nil {
         log.Printf("%s\n", err)
         return err
@@ -82,7 +85,7 @@ func (e *DB) Row(dataPtr interface{}, sql string, args []interface{}) error {
     }
 
     //返回值
-    dataValue := reflect.Indirect(reflect.ValueOf(dataPtr))
+    val := reflect.Indirect(reflect.ValueOf(ptr))
 
     for rows.Next() {
         if err := rows.Scan(scanArgs...); err != nil {
@@ -92,20 +95,20 @@ func (e *DB) Row(dataPtr interface{}, sql string, args []interface{}) error {
 
         switch dataKind {
             case reflect.Struct: //struct
-            dataValue.Set(reflect.Indirect(reflect.ValueOf(scanPtr)))
+            val.Set(reflect.Indirect(reflect.ValueOf(scanPtr)))
             case reflect.Map: //map
             //非指针, 必须放在for中每次定义
             record := make(map[string]interface{}, columnsLen)
             for i, col := range scanVals {
                 record[columns[i]] = typeAssertion(col)
             }
-            dataValue.Set(reflect.ValueOf(record))
+            val.Set(reflect.ValueOf(record))
             case reflect.Slice: //slice
             record := make([]interface{}, columnsLen)
             for i, col := range scanVals {
                 record[i] = typeAssertion(col)
             }
-            dataValue.Set(reflect.ValueOf(record))
+            val.Set(reflect.ValueOf(record))
         }
 
     }
@@ -119,8 +122,8 @@ func (e *DB) Row(dataPtr interface{}, sql string, args []interface{}) error {
 }
 
 // get all rows
-func (e *DB) Rows(dataPtr interface{}, sql string, args []interface{}) error {
-    rows, err := e.queryRows(sql, args)
+func (e *DB) Rows(ptr interface{}, sql string, args []interface{}) error {
+    rows, err := e.rows(sql, args)
     if err != nil {
         log.Printf("%s\n", err)
         return err
@@ -136,7 +139,7 @@ func (e *DB) Rows(dataPtr interface{}, sql string, args []interface{}) error {
 
     columnsLen := len(columns)
 
-    dataKind, scanPtr, scanArgs, err := scanVariable(dataPtr, columnsLen, true)
+    dataKind, scanPtr, scanArgs, err := scanVariable(ptr, columnsLen, true)
     if err != nil {
         log.Printf("%s\n", err)
         return err
@@ -148,7 +151,7 @@ func (e *DB) Rows(dataPtr interface{}, sql string, args []interface{}) error {
     }
 
     //return data
-    dataValue := reflect.Indirect(reflect.ValueOf(dataPtr))
+    val := reflect.Indirect(reflect.ValueOf(ptr))
 
     for rows.Next() {
         if err := rows.Scan(scanArgs...); err != nil {
@@ -158,22 +161,21 @@ func (e *DB) Rows(dataPtr interface{}, sql string, args []interface{}) error {
 
         switch dataKind {
             case reflect.Struct: //struct
-            dataValue.Set(reflect.Append(dataValue, reflect.Indirect(reflect.ValueOf(scanPtr))))
+            val.Set(reflect.Append(val, reflect.Indirect(reflect.ValueOf(scanPtr))))
             case reflect.Map: //map
             //非指针, 必须放在for中每次定义
             record := make(map[string]interface{}, columnsLen)
             for i, col := range scanVals {
                 record[columns[i]] = typeAssertion(col)
             }
-            dataValue.Set(reflect.Append(dataValue, reflect.ValueOf(record)))
+            val.Set(reflect.Append(val, reflect.ValueOf(record)))
             case reflect.Slice: //slice
             record := make([]interface{}, columnsLen)
             for i, col := range scanVals {
                 record[i] = typeAssertion(col)
             }
-            dataValue.Set(reflect.Append(dataValue, reflect.ValueOf(record)))
+            val.Set(reflect.Append(val, reflect.ValueOf(record)))
         }
-
     }
 
     if err = rows.Err(); err != nil {
@@ -186,14 +188,8 @@ func (e *DB) Rows(dataPtr interface{}, sql string, args []interface{}) error {
 
 // Execute query, only return sql.Result
 func (e *DB) Exec(sql string, args []interface{}) (sql.Result, error) {
-    if err := e.connect(); err != nil {
-        //log.Printf("%s\n", err)
-        return nil, err
-    }
-
-    stmt, err := dbObjects[e.Name].Prepare(sql)
+    stmt, err := e.Prepare(sql)
     if err != nil {
-        //log.Printf("%s\n", err)
         return nil, err
     }
 
@@ -201,7 +197,6 @@ func (e *DB) Exec(sql string, args []interface{}) (sql.Result, error) {
 
     result, err := stmt.Exec(args...)
     if err != nil {
-        //log.Printf("%s\n", err)
         return nil, err
     }
 
@@ -209,15 +204,9 @@ func (e *DB) Exec(sql string, args []interface{}) (sql.Result, error) {
 }
 
 // Execute query, return sql.Rows
-func (e *DB) queryRows(sql string, args []interface{}) (*sql.Rows, error) {
-    if err := e.connect(); err != nil {
-        //log.Printf("%s\n", err)
-        return nil, err
-    }
-
-    stmt, err := dbObjects[e.Name].Prepare(sql)
+func (e *DB) rows(sql string, args []interface{}) (*sql.Rows, error) {
+    stmt, err := e.Prepare(sql)
     if err != nil {
-        //log.Printf("%s\n", err)
         return nil, err
     }
 
@@ -225,9 +214,23 @@ func (e *DB) queryRows(sql string, args []interface{}) (*sql.Rows, error) {
 
     rows, err := stmt.Query(args...)
     if err != nil {
-        //log.Printf("%s\n", err)
         return nil, err
     }
 
     return rows, nil
 }
+
+// Prepare
+func (e *DB) Prepare(sql string) (*sql.Stmt, error) {
+    if err := e.connect(); err != nil {
+        return nil, err
+    }
+
+    stmt, err := dbObjects[e.Name].Prepare(sql)
+    if err != nil {
+        return nil, err
+    }
+
+    return stmt, nil
+}
+

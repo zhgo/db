@@ -18,7 +18,7 @@ type Model struct {
 }
 
 func NewModelQuery(m *Model) *Query {
-    db, _ := Databases[m.Module]
+    db, _ := Connections[m.Module]
     return &Query{DB: db, Table: m.Table}
 }
 
