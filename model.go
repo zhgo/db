@@ -17,6 +17,9 @@ type Model struct {
     Table Table
 }
 
+// Database list
+var Connections map[string]*DB = make(map[string]*DB)
+
 func NewModelQuery(m *Model) *Query {
     db, _ := Connections[m.Module]
     return &Query{DB: db, Table: m.Table}

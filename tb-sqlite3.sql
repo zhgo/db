@@ -1,0 +1,7 @@
+CREATE TABLE "table1" (
+  "UserID" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  "CreationTime" NUMERIC NOT NULL,
+  "BirthYear" INTEGER NOT NULL,
+  "Gender" TEXT NOT NULL,
+  "Nickname" TEXT NOT NULL
+);

@@ -10,108 +10,92 @@ import (
     "reflect"
 )
 
-//分析传入指针变量,构建rows.Scan所必须的参数
-//reflect.Kind 返回dataPtr类型
-//interface{} 返回struct/alice指针
-//interface{} 返回rows.Scan所须的指针切片
-//error 返回错误
-func scanVariable(dataPtr interface{}, columnsLen int, isRows bool) (reflect.Kind, interface{}, []interface{}, error) {
-    dataValue := reflect.ValueOf(dataPtr)
-    dataType := dataValue.Type()
+// Get scan variables
+func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, interface{}, []interface{}, error) {
+    typ := reflect.ValueOf(ptr).Type()
 
-    if dataType.Kind() != reflect.Ptr {
-        return 0, nil, nil, errors.New("dataPtr is not a pointer")
+    if typ.Kind() != reflect.Ptr {
+        return 0, nil, nil, errors.New("ptr is not a pointer")
     }
 
     //log.Printf("%s\n", dataType.Elem().Kind())
+    elemTyp := typ.Elem()
 
-    if isRows && dataType.Elem().Kind() != reflect.Slice {
-        return 0, nil, nil, errors.New("dataPtr is not point a slice")
-    }
+    if isRows { // Rows
+        if elemTyp.Kind() != reflect.Slice {
+            return 0, nil, nil, errors.New("ptr is not point a slice")
+        }
 
-    //columnsLen := len(columns)
-
-    scanArgs := make([]interface{}, columnsLen) //指针
-
-    //var elemVal reflect.Value
-    var elemTyp reflect.Type
-
-    if isRows { //多行数据的情况
-        //elemVal := dataValue.Elem().Elem()
-        elemTyp = dataType.Elem().Elem()
-    } else { //单行数据的情况
-        //elemVal := dataValue.Elem()
-        elemTyp = dataType.Elem()
+        elemTyp = elemTyp.Elem()
     }
 
     elemKind := elemTyp.Kind()
 
+    // element(value) is point to row
+    scan := make([]interface{}, columnsLen)
+
     //log.Printf("%s\n", elemKind)
 
     if elemKind == reflect.Struct {
-        elemNumField := elemTyp.NumField()
-        if columnsLen != elemNumField {
-            return 0, nil, nil, errors.New("columnsLen is not equal elemNumField")
+        if columnsLen != elemTyp.NumField() {
+            return 0, nil, nil, errors.New("columnsLen is not equal elemTyp.NumField()")
         }
 
-        scanVals := reflect.New(elemTyp)
-        for i := 0; i < elemNumField; i++ {
-            elemField := elemTyp.Field(i)
-            if !elemField.Anonymous { // && elemField.Tag.Get("json") != ""
-                scanArgs[i] = scanVals.Elem().FieldByIndex([]int{i}).Addr().Interface()
+        row := reflect.New(elemTyp) // Data
+        for i := 0; i < columnsLen; i++ {
+            f := elemTyp.Field(i)
+            if !f.Anonymous { // && f.Tag.Get("json") != ""
+                scan[i] = row.Elem().FieldByIndex([]int{i}).Addr().Interface()
             }
         }
-        return reflect.Struct, scanVals.Interface(), scanArgs, nil
-    } else if elemKind == reflect.Map || elemKind == reflect.Slice {
-        scanVals := make([]interface{}, columnsLen) //数据
-        for i := 0; i < columnsLen; i++ {
-            scanArgs[i] = &scanVals[i]
-        }
-        return elemKind, &scanVals, scanArgs, nil
-    } else {
-        return 0, nil, nil, errors.New("dataPtr is not point struct, map or slice")
+
+        return elemKind, row.Interface(), scan, nil
     }
+
+    if elemKind == reflect.Map || elemKind == reflect.Slice {
+        row := make([]interface{}, columnsLen) // Data
+        for i := 0; i < columnsLen; i++ {
+            scan[i] = &row[i]
+        }
+
+        return elemKind, &row, scan, nil
+    }
+
+    return 0, nil, nil, errors.New("ptr is not a point struct, map or slice")
 }
 
-//Type assertions
+// Type assertions
 func typeAssertion(v interface{}) interface{} {
-    var r interface{}
-
     switch v.(type) {
         case bool:
         //log.Printf("bool\n")
-        r = v.(bool)
+        return v.(bool)
         case int64:
         //log.Printf("int64\n")
-        r = v.(int64)
+        return v.(int64)
         case float64:
         //log.Printf("float64\n")
-        r = v.(float64)
+        return v.(float64)
         case string:
         //log.Printf("string\n")
-        r = v.(string)
+        return v.(string)
         case []byte:
         //log.Printf("[]byte\n")
-        r = string(v.([]byte))
+        return string(v.([]byte))
         default:
         log.Printf("Unexpected type %#v\n", v)
-        r = ""
+        return ""
     }
-
-    return r
 }
 
-//reflect struct, construct Field slice
+// Reflect struct, construct Field slice
 func tableFields(entity interface{}) (string, []string) {
-    typ := reflect.ValueOf(entity).Elem().Type()
-    n := typ.NumField()
-
+    typ := reflect.Indirect(reflect.ValueOf(entity)).Type()
     primary := ""
     fields := make([]string, 0)
 
-    for i := 0; i < n; i++ {
+    for i := 0; i < typ.NumField(); i++ {
         field := typ.Field(i)
-
         var name string
         if field.Tag.Get("json") != "" {
             name = field.Tag.Get("json")
