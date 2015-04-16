@@ -1,1 +1,3 @@
 language: go
+before_script:
+  - mysql -e "CREATE DATABASE zhgo CHARACTER SET utf8 COLLATE utf8_general_ci;" -uroot

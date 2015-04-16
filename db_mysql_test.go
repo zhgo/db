@@ -23,7 +23,7 @@ func TestDBMysql(t *testing.T) {
     db := DB{
         Name: "test-mysql",
         Type: "mysql",
-        DSN: "zhgo:zhgo@tcp(localhost:3306)/zhgo?charset=utf8",
+        DSN: "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8",
         Profiling: false,
         Follow: ""}
 
