@@ -14,10 +14,10 @@ import (
 
 // Query type
 const (
-    QuerySelect = iota
-    QueryInsert
+    QueryInsert = iota
     QueryUpdate
     QueryDelete
+    QuerySelect
 )
 
 // Query struct
@@ -233,9 +233,9 @@ func (q *Query) Fields(f ...string) *Query {
 func (q *Query) Values(v ...string) *Query {
     str, ok := q.Sql["InsertValues"]
     if ok && len(str) > 0 {
-        q.Sql["InsertValues"] += fmt.Sprintf(" ,('%s') ", strings.Join(v, "', '"))
+        q.Sql["InsertValues"] += fmt.Sprintf(" ,('%v') ", strings.Join(v, "', '"))
     } else {
-        q.Sql["InsertValues"] = fmt.Sprintf(" VALUES('%s') ", strings.Join(v, "', '"))
+        q.Sql["InsertValues"] = fmt.Sprintf(" VALUES('%v') ", strings.Join(v, "', '"))
     }
     q.Current = "InsertValues"
     return q
@@ -320,7 +320,7 @@ func (q *Query) Exec() (sql.Result, error) {
         return nil, errors.New("DB config not found")
     }
 
-    return q.Server.Exec(q.toString(), q.Args)
+    return q.Server.Exec(q.toString(), q.Args...)
 }
 
 // Row
@@ -329,7 +329,7 @@ func (q *Query) Row(ptr interface{}) error {
         return errors.New("DB config not found")
     }
 
-    return q.Server.Row(ptr, q.toString(), q.Args)
+    return q.Server.Row(ptr, q.toString(), q.Args...)
 }
 
 // Rows
@@ -338,5 +338,23 @@ func (q *Query) Rows(ptr interface{}) error {
         return errors.New("DB config not found")
     }
 
-    return q.Server.Rows(ptr, q.toString(), q.Args)
+    return q.Server.Rows(ptr, q.toString(), q.Args...)
+}
+
+// Drop Table
+func (q *Query) DropTable(tb string) error {
+    if q.Server == nil {
+        return errors.New("DB config not found")
+    }
+
+    _, err := q.Server.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", tb))
+    return err
+}
+
+// New Query object
+func NewQuery(server *Server) *Query {
+    query := Query{Server: server}
+    query.Sql = make(map[string]string)
+    query.Args = make([]interface{}, 0)
+    return &query
 }

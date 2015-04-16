@@ -23,9 +23,6 @@ type Server struct {
     // Data Source Name
     DSN string
 
-    // profiling
-    Profiling bool
-
     // Follow
     Follow string
 }
@@ -34,7 +31,7 @@ type Server struct {
 var dbObjects map[string]*sql.DB = make(map[string]*sql.DB)
 
 // Execute query, only return sql.Result
-func (e *Server) Exec(sql string, args []interface{}) (sql.Result, error) {
+func (e *Server) Exec(sql string, args ...interface{}) (sql.Result, error) {
     stmt, err := e.prepare(sql)
     if err != nil {
         return nil, err
@@ -51,7 +48,7 @@ func (e *Server) Exec(sql string, args []interface{}) (sql.Result, error) {
 }
 
 // Get row.
-func (e *Server) Row(ptr interface{}, sql string, args []interface{}) error {
+func (e *Server) Row(ptr interface{}, sql string, args ...interface{}) error {
     rows, columns, err := e.rows(sql, args)
     if err != nil {
         log.Printf("%s\n", err)
@@ -106,7 +103,7 @@ func (e *Server) Row(ptr interface{}, sql string, args []interface{}) error {
 }
 
 // Get all rows
-func (e *Server) Rows(ptr interface{}, sql string, args []interface{}) error {
+func (e *Server) Rows(ptr interface{}, sql string, args ...interface{}) error {
     rows, columns, err := e.rows(sql, args)
     if err != nil {
         log.Printf("%s\n", err)
@@ -211,3 +208,7 @@ func (e *Server) connect() error {
     return nil
 }
 
+// New Server
+func NewServer(name string, typ string, dsn string) *Server {
+    return &Server{Name: name, Type: typ, DSN: dsn}
+}

@@ -17,5 +17,30 @@ type Model struct {
     Table Table
 }
 
-// Database list
+// Server list
 var Servers = make(map[string]*Server)
+
+// New Model
+func NewModel(module string, table Table) *Model {
+    return &Model{Module: module, Table: table}
+}
+
+// Insert
+func (m *Model) Insert() *Model {
+    return &Model{Module: m.Module, Table: m.Table}
+}
+
+// Update
+func (m *Model) Update() *Model {
+    return &Model{Module: m.Module, Table: m.Table}
+}
+
+// Delete
+func (m *Model) Delete() *Model {
+    return &Model{Module: m.Module, Table: m.Table}
+}
+
+// Select
+func (m *Model) Select() *Model {
+    return &Model{Module: m.Module, Table: m.Table}
+}

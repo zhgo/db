@@ -16,16 +16,14 @@ CREATE DATABASE `zhgo` CHARACTER SET utf8 COLLATE utf8_general_ci;
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, LOCK TABLES ON `zhgo`.* TO 'zhgo'@'localhost';
 */
 
-func TestDBMysql(t *testing.T) {
+func TestServerMysql(t *testing.T) {
     var q string
     var r sql.Result
 
-    db := Server{
+    server := Server{
         Name: "test-mysql",
         Type: "mysql",
-        DSN: "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8",
-        Profiling: false,
-        Follow: ""}
+        DSN: "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8"}
 
 
     // Load table1.sql
@@ -37,14 +35,14 @@ func TestDBMysql(t *testing.T) {
 
     // Drop table1
     q = "DROP TABLE IF EXISTS table1"
-    _, err = db.Exec(q, nil)
+    _, err = server.Exec(q)
     if err != nil {
         t.Fatalf("Drop table1 failed: %v.\n", err)
     }
 
 
     // Create table1
-    _, err = db.Exec(string(b), nil)
+    _, err = server.Exec(string(b))
     if err != nil {
         t.Fatalf("Create table1 failed: %v.\n", err)
     }
@@ -52,7 +50,7 @@ func TestDBMysql(t *testing.T) {
 
     // Insert
     q = "INSERT INTO table1(BirthYear, Gender, Nickname) VALUES('1980', 'Male', '张三丰')"
-    r, err = db.Exec(q, nil)
+    r, err = server.Exec(q)
     if err != nil {
         t.Fatalf("Insert data to table1 failed: %v.\n", err)
     }
@@ -68,8 +66,7 @@ func TestDBMysql(t *testing.T) {
     // Insert confirm
     d := make(map[string]interface{})
     q = "SELECT * FROM table1 WHERE UserID = ?"
-    p := []interface{}{1000000}
-    err = db.Row(&d, q, p)
+    err = server.Row(&d, q, 1000000)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
@@ -86,8 +83,7 @@ func TestDBMysql(t *testing.T) {
 
     // Update
     q = "UPDATE table1 SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = '1000000'"
-    p = []interface{}{1982, "Female", "Bob"}
-    r, err = db.Exec(q, p)
+    r, err = server.Exec(q, 1982, "Female", "Bob")
     if err != nil {
         t.Fatalf("Update table1 failed: %v.\n", err)
     }
@@ -103,8 +99,7 @@ func TestDBMysql(t *testing.T) {
     // Update confirm
     d = make(map[string]interface{})
     q = "SELECT * FROM table1 WHERE UserID = ?"
-    p = []interface{}{1000000}
-    err = db.Row(&d, q, p)
+    err = server.Row(&d, q, 1000000)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
@@ -119,16 +114,14 @@ func TestDBMysql(t *testing.T) {
     }
 }
 
-func TestDBSqlite3(t *testing.T) {
+func TestServerSqlite3(t *testing.T) {
     var q string
     var r sql.Result
 
-    db := Server{
+    server := Server{
         Name: "test-sqlite3",
         Type: "sqlite3",
-        DSN: "sqlite3.db",
-        Profiling: false,
-        Follow: ""}
+        DSN: "sqlite3.db"}
 
 
     // Load table1.sql
@@ -140,14 +133,14 @@ func TestDBSqlite3(t *testing.T) {
 
     // Drop table1
     q = "DROP TABLE IF EXISTS table1"
-    _, err = db.Exec(q, nil)
+    _, err = server.Exec(q)
     if err != nil {
         t.Fatalf("Drop table1 failed: %v.\n", err)
     }
 
 
     // Create table1
-    _, err = db.Exec(string(b), nil)
+    _, err = server.Exec(string(b))
     if err != nil {
         t.Fatalf("Create table1 failed: %v.\n", err)
     }
@@ -155,7 +148,7 @@ func TestDBSqlite3(t *testing.T) {
 
     // Insert
     q = "INSERT INTO table1(UserID, CreationTime, BirthYear, Gender, Nickname) VALUES(1000000, '1429091207', '1980', 'Male', '张三丰')"
-    r, err = db.Exec(q, nil)
+    r, err = server.Exec(q)
     if err != nil {
         t.Fatalf("Insert data to table1 failed: %v.\n", err)
     }
@@ -171,8 +164,7 @@ func TestDBSqlite3(t *testing.T) {
     // Insert confirm
     d := make(map[string]interface{})
     q = "SELECT * FROM table1 WHERE UserID = ?"
-    p := []interface{}{1000000}
-    err = db.Row(&d, q, p)
+    err = server.Row(&d, q, 1000000)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
@@ -192,8 +184,7 @@ func TestDBSqlite3(t *testing.T) {
 
     // Update
     q = "UPDATE table1 SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = '1000000'"
-    p = []interface{}{1982, "Female", "Bob"}
-    r, err = db.Exec(q, p)
+    r, err = server.Exec(q, 1982, "Female", "Bob")
     if err != nil {
         t.Fatalf("Update table1 failed: %v.\n", err)
     }
@@ -209,8 +200,7 @@ func TestDBSqlite3(t *testing.T) {
     // Update confirm
     d = make(map[string]interface{})
     q = "SELECT * FROM table1 WHERE UserID = ?"
-    p = []interface{}{1000000}
-    err = db.Row(&d, q, p)
+    err = server.Row(&d, q, 1000000)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
