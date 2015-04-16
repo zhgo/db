@@ -88,6 +88,14 @@ func typeAssertion(v interface{}) interface{} {
     }
 }
 
+// Table alias
+func tableAlias(alias []string) string {
+    if len(alias) > 0 {
+        return alias[0]
+    }
+    return ""
+}
+
 // Reflect struct, construct Field slice
 func tableFields(entity interface{}) (string, []string) {
     typ := reflect.Indirect(reflect.ValueOf(entity)).Type()

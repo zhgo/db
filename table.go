@@ -19,9 +19,6 @@ type Table struct {
     // All fields, except primary
     Fields []string
 
-    // Index
-    Indexs []string
-
     // Entity
     EntityType reflect.Type
 }

@@ -5,7 +5,7 @@
 package db
 
 import (
-    "strings"
+    //"strings"
 )
 
 // Model struct
@@ -18,36 +18,4 @@ type Model struct {
 }
 
 // Database list
-var Connections map[string]*DB = make(map[string]*DB)
-
-func NewModelQuery(m *Model) *Query {
-    db, _ := Connections[m.Module]
-    return &Query{DB: db, Table: m.Table}
-}
-
-// Select row(s).
-func (m *Model) Select(fields ...string) *Query {
-    q := NewModelQuery(m)
-    if len(fields) == 0 {
-        fields = append(fields, "*")
-    }
-
-    q.Sql.Select = strings.Join(fields, ", ")
-    return q
-}
-
-// Insert.
-func (m *Model) Insert(data *[]interface{}) (int64, error) {
-    q := NewModelQuery(m)
-    return q.Insert(data)
-}
-
-func (m *Model) Update(data *map[string]interface{}) (int64, error) {
-    q := NewModelQuery(m)
-    return q.Update(data)
-}
-
-func (m *Model) Delete() (int64, error) {
-    q := NewModelQuery(m)
-    return q.Delete()
-}
+var Servers = make(map[string]*Server)

@@ -12,8 +12,8 @@ import (
     "reflect"
 )
 
-// Database struct
-type DB struct {
+// Server struct
+type Server struct {
     // Name
     Name string
 
@@ -30,11 +30,11 @@ type DB struct {
     Follow string
 }
 
-// DB instance
+// Server instance
 var dbObjects map[string]*sql.DB = make(map[string]*sql.DB)
 
 // Execute query, only return sql.Result
-func (e *DB) Exec(sql string, args []interface{}) (sql.Result, error) {
+func (e *Server) Exec(sql string, args []interface{}) (sql.Result, error) {
     stmt, err := e.prepare(sql)
     if err != nil {
         return nil, err
@@ -51,7 +51,7 @@ func (e *DB) Exec(sql string, args []interface{}) (sql.Result, error) {
 }
 
 // Get row.
-func (e *DB) Row(ptr interface{}, sql string, args []interface{}) error {
+func (e *Server) Row(ptr interface{}, sql string, args []interface{}) error {
     rows, columns, err := e.rows(sql, args)
     if err != nil {
         log.Printf("%s\n", err)
@@ -106,7 +106,7 @@ func (e *DB) Row(ptr interface{}, sql string, args []interface{}) error {
 }
 
 // Get all rows
-func (e *DB) Rows(ptr interface{}, sql string, args []interface{}) error {
+func (e *Server) Rows(ptr interface{}, sql string, args []interface{}) error {
     rows, columns, err := e.rows(sql, args)
     if err != nil {
         log.Printf("%s\n", err)
@@ -161,7 +161,7 @@ func (e *DB) Rows(ptr interface{}, sql string, args []interface{}) error {
 }
 
 // Execute query, return sql.Rows, rows.Columns
-func (e *DB) rows(sql string, args []interface{}) (*sql.Rows, []string, error) {
+func (e *Server) rows(sql string, args []interface{}) (*sql.Rows, []string, error) {
     stmt, err := e.prepare(sql)
     if err != nil {
         return nil, nil, err
@@ -183,7 +183,7 @@ func (e *DB) rows(sql string, args []interface{}) (*sql.Rows, []string, error) {
 }
 
 // Prepare SQL
-func (e *DB) prepare(sql string) (*sql.Stmt, error) {
+func (e *Server) prepare(sql string) (*sql.Stmt, error) {
     if err := e.connect(); err != nil {
         return nil, err
     }
@@ -197,7 +197,7 @@ func (e *DB) prepare(sql string) (*sql.Stmt, error) {
 }
 
 // Connect to database
-func (e *DB) connect() error {
+func (e *Server) connect() error {
     db, s := dbObjects[e.Name]
     // err := db.Ping(); err != nil
     if s == false || db == nil {

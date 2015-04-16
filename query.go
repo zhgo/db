@@ -5,280 +5,338 @@
 package db
 
 import (
-    "errors"
-    "fmt"
-    "log"
-    "reflect"
     "strings"
+    "fmt"
+    "errors"
+    "log"
+    "database/sql"
+)
+
+// Query type
+const (
+    QuerySelect = iota
+    QueryInsert
+    QueryUpdate
+    QueryDelete
 )
 
 // Query struct
 type Query struct {
-    // DB
-    DB *DB
+    // Server
+    Server *Server
 
-    // table instance
-    Table Table
+    // Query type: Select, Insert, Update, Delete
+    Type uint
 
     // Sql
-    Sql Sql
-}
+    Sql map[string]string
 
-// Sql struct
-type Sql struct {
-    //Select fields
-    Select string
-
-    //FROM Cation: no use normal
-    From string
-
-    //Table join
-    Join string
-
-    //Where
-    Where string
-
-    //Order by
-    Order string
-
-    //Group by
-    Group string
-
-    //having
-    Having string
-
-    //limit x
-    Offset uint64 //limit Offset, Rows
-
-    //limit x, y
-    Rows uint64 //limit Offset, Rows
-
-    //lock row(s)
-    ForUpdate string
-
-    //args for sql
+    //args for Sql
     Args []interface{}
+
+    // Limit
+    limit QueryLimit
+
+    // Current Sql node
+    Current string
 }
 
-// Select fields.
-// Row() or Rows() will return []map[string]interface{} after the method called, otherwith return []EntityStruct.
-func (q *Query) Fields(fields ...string) *Query {
-    if len(fields) == 0 {
-        fields = append(fields, "*")
-    }
+// Limit struct
+type QueryLimit struct{
+    // Enabled
+    Enabled bool
 
-    q.Sql.Select = strings.Join(fields, ", ")
+    // Offset
+    Offset int64
+
+    // Rows
+    Rows int64
+}
+
+// And
+func (q *Query) And(f string, co string, v ...string) *Query {
+    return q.Condition(q.Current, "AND", f, co, v...)
+}
+
+// Or
+func (q *Query) Or(f string, co string, v ...string) *Query {
+    return q.Condition(q.Current, "OR", f, co, v...)
+}
+
+// Not
+func (q *Query) Not(f string, co string, v ...string) *Query {
+    return q.Condition(q.Current, "NOT", f, co, v...)
+}
+
+// node Sql node
+// l Logical
+// f Field
+// co Comparison Operators
+// v Value(s)
+func (q *Query) Condition(node string, l string, f string, co string, v ...string) *Query {
+    q.Sql[node] += fmt.Sprintf(" %s %s %s '%s' ", l, f, co, strings.Join(v, "', '"))
+    q.Current = node
     return q
 }
 
-// join table
-func (q *Query) Join() *Query {
-
-    return q
-}
-
-// Where, 通常查询以Where()方法开始, 后面跟随0个或多个的And(),Or()
-func (q *Query) Where(field string, m string, val ...interface{}) *Query {
-    return q.whereNode("AND", field, m, val...) //the first where logical must be AND.
-}
-
-// AND
-func (q *Query) And(field string, m string, val ...interface{}) *Query {
-    return q.whereNode("AND", field, m, val...)
-}
-
-// OR
-func (q *Query) Or(field string, m string, val ...interface{}) *Query {
-    return q.whereNode("OR", field, m, val...)
-}
-
-// Append where sql, private method
-// l logic, for example: AND, OR
-// field
-// m condition, for example: =, <, <=, >, >=, <>, LLIKE, RLIKE, LIKE, IN, NOT IN, (
-// val argument value, 可能是字符串, 也可能是数组, 也可能Where对象
-func (q *Query) whereNode(l string, field string, m string, val ...interface{}) *Query {
-    switch m {
-        case "=", "<", "<=", ">", ">=", "<>", "LIKE":
-        q.Sql.Where += fmt.Sprintf(" %s %s %s ?", l, field, m)
-        q.Sql.Args = append(q.Sql.Args, val[0])
-        case "IN", "NOT IN":
-        w := make([]string, len(val))
-        for i, v := range val {
-            w[i] = "?"
-            q.Sql.Args = append(q.Sql.Args, v)
-        }
-        q.Sql.Where += fmt.Sprintf(" %s %s %s (%s) ", l, field, m, strings.Join(w, ","))
-    }
-
-    return q
-}
-
-func (q *Query) Order() *Query {
-    return q
-}
-
-func (q *Query) Group() *Query {
-
-    return q
-}
-
-func (q *Query) Having() *Query {
-
-    return q
-}
-
-func (q *Query) Limit(offset, rows uint64) *Query {
-
-    return q
-}
-
-func (q *Query) Lock() *Query {
-
-    return q
-}
-
-// connect all sql department to a corect sql string.
-func (q *Query) toString() string {
-    //create sql
-    var sel string
-    if len(q.Sql.Select) > 0 {
-        sel = q.Sql.Select //返回[]map[string]interface{}
+// Select fields
+func (q *Query) Select(f ...string) *Query {
+    q.Type = QuerySelect
+    if len(f) == 0 {
+        q.Sql["Select"] = "*"
     } else {
-        sel = fmt.Sprintf("a.`%s`, a.`%s`", q.Table.Primary, strings.Join(q.Table.Fields, "`, a.`")) //返回[]EntityStruct
+        q.Sql["Select"] = strings.Join(f, ", ")
     }
-
-    sql := fmt.Sprintf("SELECT %s FROM %s a %s WHERE 1 %s %s %s %s LIMIT %d, %d %s", sel, q.Table.Name, q.Sql.Join, q.Sql.Where, q.Sql.Order, q.Sql.Group, q.Sql.Having, q.Sql.Offset, q.Sql.Rows, q.Sql.ForUpdate)
-
-    log.Printf("%s\n", sql)
-    log.Printf("%#v\n", q.Sql.Args)
-
-    return sql
+    return q
 }
 
-// First row, first column
-func (q *Query) Scaler(ptr interface{}) error {
-
-    return nil
+// From
+func (q *Query) From(tb string, alias ...string) *Query {
+    q.Sql["From"] = fmt.Sprintf(" %s %s ", tb, tableAlias(alias))
+    q.Current = "From"
+    return q
 }
 
-// get one row
-func (q *Query) Row(ptr interface{}) error {
-    if q.DB == nil {
-        return errors.New("DB is nil")
-    }
-
-    //get first row only
-    q.Sql.Offset = 0
-    q.Sql.Rows = 1
-
-    return q.DB.Row(ptr, q.toString(), q.Sql.Args)
+// Join
+func (q *Query) Join(tb string, alias ...string) *Query {
+    return q.JoinNode("", tb, alias...)
 }
 
-// get all rows, return []struct or []map[string]interface{} or [][]interface{}
-func (q *Query) Rows(ptr interface{}) error {
-    if q.DB == nil {
-        return errors.New("DB is nil")
-    }
-
-    return q.DB.Rows(ptr, q.toString(), q.Sql.Args)
+// Join Inner
+func (q *Query) JoinInner(tb string, alias ...string) *Query {
+    return q.JoinNode("INNER", tb, alias...)
 }
 
-// Insert
-func (q *Query) Insert(data *[]interface{}) (int64, error) {
-    if q.DB == nil {
-        return 0, errors.New("DB is nil")
-    }
-
-    if len(*data) == 0 {
-        err := errors.New("empty insert data")
-        log.Printf("%s\n", err)
-        return 0, err
-    }
-
-    var insertVal []string
-    insertArgs := []interface{}{}
-    insertArgsValue := reflect.Indirect(reflect.ValueOf(&insertArgs))
-
-    for _, item := range *data {
-        sli := []string{}
-
-        //convert struct fields to sql string
-        itemValue := reflect.ValueOf(item)
-        itemType := itemValue.Type()
-        for i := 0; i < itemType.NumField(); i++ {
-            itemField := itemType.Field(i)
-            if !itemField.Anonymous && itemField.Tag.Get("pk") == "" { // && itemField.Tag.Get("json") != ""
-                sli = append(sli, "?")
-                v := itemValue.FieldByIndex([]int{i})
-                insertArgsValue.Set(reflect.Append(insertArgsValue, v))
-            }
-        }
-
-        insertVal = append(insertVal, "("+strings.Join(sli, ", ")+")")
-    }
-
-    insertSql := fmt.Sprintf("INSERT INTO `%s` (`%s`) VALUES %s", q.Table.Name, strings.Join(q.Table.Fields, "`, `"), strings.Join(insertVal, ","))
-
-    log.Printf("%s\n", insertSql)
-    log.Printf("%#v\n", insertArgs)
-
-    result, err := q.DB.Exec(insertSql, insertArgs)
-    if err != nil {
-        log.Printf("%s\n", err)
-        return 0, err
-    }
-
-    return result.LastInsertId()
+// Join Outer
+func (q *Query) JoinOuter(tb string, alias ...string) *Query {
+    return q.JoinNode("OUTER", tb, alias...)
 }
 
-// Update
-func (q *Query) Update(data *map[string]interface{}) (int64, error) {
-    if q.DB == nil {
-        return 0, errors.New("DB is nil")
-    }
+// Join Left
+func (q *Query) JoinLeft(tb string, alias ...string) *Query {
+    return q.JoinNode("LEFT", tb, alias...)
+}
 
-    //convert map to sql string
-    updateBody := []string{}
-    updateArgs := []interface{}{}
+// Join Right
+func (q *Query) JoinRight(tb string, alias ...string) *Query {
+    return q.JoinNode("RIGHT", tb, alias...)
+}
 
-    for key, element := range *data {
-        updateBody = append(updateBody, key+" = ?")
-        updateArgs = append(updateArgs, element)
-    }
+// Join node
+func (q *Query) JoinNode(p string, tb string, alias ...string) *Query {
+    q.Sql["Join"] += fmt.Sprintf(" %s JOIN %s %s ", p, tb, tableAlias(alias))
+    q.Current = "Join"
+    return q
+}
 
-    updateSql := fmt.Sprintf("UPDATE %s SET %s WHERE 1 %s", q.Table.Name, strings.Join(updateBody, ", "), q.Sql.Where)
+// Join On
+func (q *Query) On(f string, co string, v ...string) *Query {
+    return q.OnNode("ON", f, co, v...)
+}
 
-    updateArgs = append(updateArgs, q.Sql.Args...)
+// On node
+func (q *Query) OnNode(l string, f string, co string, v ...string) *Query {
+    return q.Condition("Join", l, f, co, v...)
+}
 
-    log.Printf("%s\n", updateSql)
-    log.Printf("%#v\n", updateArgs)
+// Where
+func (q *Query) Where(f string, co string, v ...string) *Query {
+    return q.WhereNode("WHERE", f, co, v...)
+}
 
-    result, err := q.DB.Exec(updateSql, updateArgs)
-    if err != nil {
-        log.Printf("%s\n", err)
-        return 0, err
-    }
+// Where node
+func (q *Query) WhereNode(l string, f string, co string, v ...string) *Query {
+    return q.Condition("Where", l, f, co, v...)
+}
 
-    return result.RowsAffected()
+// Group
+func (q *Query) Group(f ...string) *Query {
+    q.Sql["Group"] = fmt.Sprintf(" GROUP BY %s ", strings.Join(f, ", "))
+    return q
+}
+
+// Having
+func (q *Query) Having(f string, co string, v ...string) *Query {
+    return q.Condition("Having", "HAVING", f, co, v...)
+}
+
+// Order
+func (q *Query) Order(sort string, f ...string) *Query {
+    q.Sql["Order"] = fmt.Sprintf(" ORDER BY %s %s ", strings.Join(f, ", "), sort)
+    q.Current = "Order"
+    return q
+}
+
+// Order ASC
+func (q *Query) OrderAsc(f ...string) *Query {
+    return q.Order("ASC", f...)
+}
+
+// Order DESC
+func (q *Query) OrderDesc(f ...string) *Query {
+    return q.Order("DESC", f...)
+}
+
+// Limit
+func (q *Query) Limit(offset, rows int64) *Query {
+    q.limit.Enabled = true
+    q.limit.Offset = offset
+    q.limit.Rows = rows
+    q.Current = "Limit"
+    return q
 }
 
 // Delete
-func (q *Query) Delete() (int64, error) {
-    if q.DB == nil {
-        return 0, errors.New("DB is nil")
+func (q *Query) DeleteFrom(tb string) *Query {
+    q.Type = QueryDelete
+    q.Sql["Delete"] = tb
+    q.Current = "Delete"
+    return q
+}
+
+// Update
+func (q *Query) Update(tb string) *Query {
+    q.Type = QueryUpdate
+    q.Sql["Update"] = tb
+    q.Current = "Update"
+    return q
+}
+
+// Set(Update)
+func (q *Query) Set(f string, v interface{}) *Query {
+    str, ok := q.Sql["UpdateSet"]
+    if ok && len(str) > 0 {
+        q.Sql["UpdateSet"] += fmt.Sprintf(" , %s = '%v' ", f, v)
+    } else {
+        q.Sql["UpdateSet"] = fmt.Sprintf(" SET %s = '%v' ", f, v)
+    }
+    q.Current = "UpdateSet"
+    return q
+}
+
+// Insert
+func (q *Query) InsertInto(tb string) *Query {
+    q.Type = QueryInsert
+    q.Sql["Insert"] = tb
+    q.Current = "Insert"
+    return q
+}
+
+// Fields(Insert)
+func (q *Query) Fields(f ...string) *Query {
+    q.Sql["InsertFields"] = fmt.Sprintf(" (%s) ", strings.Join(f, ", "))
+    q.Current = "InsertFields"
+    return q
+}
+
+// Values(Insert)
+func (q *Query) Values(v ...string) *Query {
+    str, ok := q.Sql["InsertValues"]
+    if ok && len(str) > 0 {
+        q.Sql["InsertValues"] += fmt.Sprintf(" ,('%s') ", strings.Join(v, "', '"))
+    } else {
+        q.Sql["InsertValues"] = fmt.Sprintf(" VALUES('%s') ", strings.Join(v, "', '"))
+    }
+    q.Current = "InsertValues"
+    return q
+}
+
+// Connect all sql part to a corect sql string.
+func (q *Query) toString() string {
+    str := ""
+
+    // Select
+    if node, ok := q.Sql["Select"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" SELECT %s ", node)
+    }
+    if node, ok := q.Sql["From"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" From %s ", node)
+    }
+    if node, ok := q.Sql["Join"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
     }
 
-    deleteSql := fmt.Sprintf("DELETE FROM %s WHERE 1 %s", q.Table.Name, q.Sql.Where)
-
-    log.Printf("%s\n", deleteSql)
-    log.Printf("%#v\n", q.Sql.Args)
-
-    result, err := q.DB.Exec(deleteSql, q.Sql.Args)
-    if err != nil {
-        log.Printf("%s\n", err)
-        return 0, err
+    // Insert
+    if node, ok := q.Sql["Insert"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" INSERT INTO %s ", node)
+    }
+    if node, ok := q.Sql["InsertFields"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+    if node, ok := q.Sql["InsertValues"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
     }
 
-    return result.RowsAffected()
+    // Update
+    if node, ok := q.Sql["Update"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" UPDATE %s ", node)
+    }
+    if node, ok := q.Sql["UpdateSet"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+
+    // Delete
+    if node, ok := q.Sql["Delete"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" DELETE FROM %s ", node)
+    }
+
+    // Select, Update, Delete
+    if node, ok := q.Sql["Where"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+
+    // Select
+    if node, ok := q.Sql["Group"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+    if node, ok := q.Sql["Having"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+
+    // Select, Update
+    if node, ok := q.Sql["Order"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+
+    // Select, Update
+    if q.limit.Enabled == true {
+        str += fmt.Sprintf(" LIMIT %d, %d ", q.limit.Offset, q.limit.Rows)
+    }
+
+    // Select
+    if node, ok := q.Sql["ForUpdate"]; ok && len(node) > 0 {
+        str += fmt.Sprintf(" %s ", node)
+    }
+
+    log.Printf("%s\n", str)
+    log.Printf("%#v\n", q.Args)
+
+    return str
+}
+
+// Exec
+func (q *Query) Exec() (sql.Result, error) {
+    if q.Server == nil {
+        return nil, errors.New("DB config not found")
+    }
+
+    return q.Server.Exec(q.toString(), q.Args)
+}
+
+// Row
+func (q *Query) Row(ptr interface{}) error {
+    if q.Server == nil {
+        return errors.New("DB config not found")
+    }
+
+    return q.Server.Row(ptr, q.toString(), q.Args)
+}
+
+// Rows
+func (q *Query) Rows(ptr interface{}) error {
+    if q.Server == nil {
+        return errors.New("DB config not found")
+    }
+
+    return q.Server.Rows(ptr, q.toString(), q.Args)
 }
