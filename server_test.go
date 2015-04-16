@@ -20,10 +20,7 @@ func TestServerMysql(t *testing.T) {
     var q string
     var r sql.Result
 
-    server := Server{
-        Name: "test-mysql",
-        Type: "mysql",
-        DSN: "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8"}
+    server := NewServer("test-mysql", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
 
 
     // Load table1.sql
@@ -118,10 +115,7 @@ func TestServerSqlite3(t *testing.T) {
     var q string
     var r sql.Result
 
-    server := Server{
-        Name: "test-sqlite3",
-        Type: "sqlite3",
-        DSN: "sqlite3.db"}
+    server := NewServer("test-sqlite3", "sqlite3", "sqlite3.db")
 
 
     // Load table1.sql
