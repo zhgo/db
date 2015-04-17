@@ -23,6 +23,7 @@ type Table struct {
     EntityType reflect.Type
 }
 
+// New Table
 func NewTable(tableName string, entity interface{}) Table {
     p, f := tableFields(entity)
     t := Table{Name: tableName, Primary: p, Fields: f, EntityType: reflect.ValueOf(entity).Elem().Type()}

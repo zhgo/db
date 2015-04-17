@@ -338,10 +338,11 @@ func (q *Query) Update(tb string) *Query {
 func (q *Query) Set(f string, v interface{}) *Query {
     str, ok := q.Sql["Set"]
     if ok && len(str) > 0 {
-        q.Sql["Set"] += fmt.Sprintf(" , %s = '%v' ", f, v)
+        q.Sql["Set"] += fmt.Sprintf(" , %s = ? ", f)
     } else {
-        q.Sql["Set"] = fmt.Sprintf(" SET %s = '%v' ", f, v)
+        q.Sql["Set"] = fmt.Sprintf(" SET %s = ? ", f)
     }
+    q.Args = append(q.Args, v)
     q.current = "Set"
     return q
 }
@@ -372,9 +373,9 @@ func (q *Query) Values(vs ...interface{}) *Query {
 
     str, ok := q.Sql["Values"]
     if ok && len(str) > 0 {
-        q.Sql["Values"] += fmt.Sprintf(" ,(%v) ", strings.Join(ph, ", "))
+        q.Sql["Values"] += fmt.Sprintf(" ,(%s) ", strings.Join(ph, ", "))
     } else {
-        q.Sql["Values"] = fmt.Sprintf(" VALUES(%v) ", strings.Join(ph, ", "))
+        q.Sql["Values"] = fmt.Sprintf(" VALUES(%s) ", strings.Join(ph, ", "))
     }
     q.current = "Values"
     return q
@@ -396,26 +397,90 @@ func (q *Query) ToString() string {
 
 
 
+// Parse map data to insert SQL
+func (q *Query) mapToInsert(d map[string]interface{}) {
+    f := make([]string, 0)
+    ph := make([]string, 0)
+    for k, v := range d {
+        f = append(f, k)
+        ph = append(ph, "?")
+        q.Args = append(q.Args, v)
+    }
+    q.Sql["Fields"] = fmt.Sprintf(" (%s) ", strings.Join(f, ", "))
+    q.Sql["Values"] = fmt.Sprintf(" VALUES(%s) ", strings.Join(ph, ", "))
+}
+
+// Parse map data to update SQL
+func (q *Query) mapToUpdate(d map[string]interface{}) {
+    i := 0
+    for k, v := range d {
+        if i == 0 {
+            q.Sql["Set"] = fmt.Sprintf(" SET %s = ? ", k)
+        } else {
+            q.Sql["Set"] += fmt.Sprintf(" , %s = ? ", k)
+        }
+        q.Args = append(q.Args, v)
+        i++
+    }
+}
+
+// Parse map data to where SQL
+func (q *Query) mapToWhere(d map[string]interface{}) {
+    i := 0
+    for k, v := range d {
+        if i == 0 {
+            q.Sql["Where"] = fmt.Sprintf(" WHERE %s = ? ", k)
+        } else {
+            q.Sql["Where"] += fmt.Sprintf(" AND %s = ? ", k)
+        }
+        q.Args = append(q.Args, v)
+        i++
+    }
+}
+
 // Exec
-func (q *Query) Exec() (sql.Result, error) {
+func (q *Query) Exec(d ...map[string]interface{}) (sql.Result, error) {
     if q.Server == nil {
         return nil, errors.New("DB config not found")
+    }
+    switch q.Type {
+        case QueryInsert:
+        if len(d) == 1 {
+            q.mapToInsert(d[0])
+        }
+        case QueryUpdate:
+        if len(d) >= 1 {
+            q.mapToUpdate(d[0])
+        }
+        if len(d) == 2 {
+            q.mapToWhere(d[1])
+        }
+        case QueryDelete:
+        if len(d) == 1 {
+            q.mapToWhere(d[0])
+        }
     }
     return q.Server.Exec(q.ToString(), q.Args...)
 }
 
 // Row
-func (q *Query) Row(ptr interface{}) error {
+func (q *Query) Row(ptr interface{}, d ...map[string]interface{}) error {
     if q.Server == nil {
         return errors.New("DB config not found")
+    }
+    if len(d) == 1 {
+        q.mapToWhere(d[0])
     }
     return q.Server.Row(ptr, q.ToString(), q.Args...)
 }
 
 // Rows
-func (q *Query) Rows(ptr interface{}) error {
+func (q *Query) Rows(ptr interface{}, d ...map[string]interface{}) error {
     if q.Server == nil {
         return errors.New("DB config not found")
+    }
+    if len(d) == 1 {
+        q.mapToWhere(d[0])
     }
     return q.Server.Rows(ptr, q.ToString(), q.Args...)
 }

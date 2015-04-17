@@ -25,22 +25,31 @@ func NewModel(module string, table Table) *Model {
 }
 
 // Insert
-func (m *Model) Insert() *Model {
-    return &Model{Module: m.Module, Table: m.Table}
+func (m *Model) Insert() *Query {
+    q := NewQuery(Servers[m.Module])
+    q.InsertInto(m.Table.Name)
+    return q
 }
 
 // Update
-func (m *Model) Update() *Model {
-    return &Model{Module: m.Module, Table: m.Table}
+func (m *Model) Update() *Query {
+    q := NewQuery(Servers[m.Module])
+    q.Update(m.Table.Name)
+    return q
 }
 
 // Delete
-func (m *Model) Delete() *Model {
-    return &Model{Module: m.Module, Table: m.Table}
+func (m *Model) Delete() *Query {
+    q := NewQuery(Servers[m.Module])
+    q.DeleteFrom(m.Table.Name)
+    return q
 }
 
 // Select
-func (m *Model) Select() *Model {
-    return &Model{Module: m.Module, Table: m.Table}
+func (m *Model) Select() *Query {
+    q := NewQuery(Servers[m.Module])
+    q.Select(m.Table.Fields...)
+    q.From(m.Table.Name)
+    return q
 }
 
