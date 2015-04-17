@@ -5,7 +5,6 @@
 package db
 
 import (
-    //"strings"
 )
 
 // Model struct
@@ -44,3 +43,4 @@ func (m *Model) Delete() *Model {
 func (m *Model) Select() *Model {
     return &Model{Module: m.Module, Table: m.Table}
 }
+

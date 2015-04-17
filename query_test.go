@@ -60,7 +60,7 @@ func TestQueryMysql(t *testing.T) {
     // Insert confirm
     d := make(map[string]interface{})
     query = NewQuery(&server)
-    err = query.Select("*").From("table1").Where("UserID", "=", "1000000").Row(&d)
+    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
@@ -77,7 +77,7 @@ func TestQueryMysql(t *testing.T) {
 
     // Update
     query = NewQuery(&server)
-    r, err = query.Update("table1").Set("BirthYear", "1982").Set("Gender", "Female").Set("Nickname", "Bob").Where("UserID", "=", "1000000").Exec()
+    r, err = query.Update("table1").Set("BirthYear", "1982").Set("Gender", "Female").Set("Nickname", "Bob").Where(query.Eq("UserID", "1000000")).Exec()
     if err != nil {
         t.Fatalf("Update table1 failed: %v.\n", err)
     }
@@ -92,7 +92,7 @@ func TestQueryMysql(t *testing.T) {
     // Update confirm
     d = make(map[string]interface{})
     query = NewQuery(&server)
-    err = query.Select("*").From("table1").Where("UserID", "=", "1000000").Row(&d)
+    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
@@ -155,7 +155,7 @@ func TestQuerySqlite3(t *testing.T) {
     // Insert confirm
     d := make(map[string]interface{})
     query = NewQuery(server)
-    err = query.Select("*").From("table1").Where("UserID", "=", "1000000").Row(&d)
+    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
@@ -175,7 +175,7 @@ func TestQuerySqlite3(t *testing.T) {
 
     // Update
     query = NewQuery(server)
-    r, err = query.Update("table1").Set("BirthYear", "1982").Set("Gender", "Female").Set("Nickname", "Bob").Where("UserID", "=", "1000000").Exec()
+    r, err = query.Update("table1").Set("BirthYear", "1982").Set("Gender", "Female").Set("Nickname", "Bob").Where(query.Eq("UserID", "1000000")).Exec()
     if err != nil {
         t.Fatalf("Update table1 failed: %v.\n", err)
     }
@@ -190,7 +190,7 @@ func TestQuerySqlite3(t *testing.T) {
     // Update confirm
     d = make(map[string]interface{})
     query = NewQuery(server)
-    err = query.Select("*").From("table1").Where("UserID", "=", "1000000").Row(&d)
+    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
     if err != nil {
         t.Fatalf("Select table1 failed: %v.\n", err)
     }
