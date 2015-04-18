@@ -21,7 +21,8 @@ const (
 )
 
 // Query Nodes
-var queryNodes = map[uint][]string{QueryInsert: []string{"Insert", "Fields", "Values"},
+var queryNodes = map[uint][]string{
+    QueryInsert: []string{"Insert", "Fields", "Values"},
     QueryUpdate: []string{"Update", "Set", "Where", "Order", "Limit"},
     QueryDelete: []string{"Delete", "Where"},
     QuerySelect: []string{"Select", "From", "Join", "Where", "Group", "Having", "Order", "Limit", "ForUpdate"}}
@@ -231,35 +232,35 @@ func (q *Query) From(tb string) *Query {
 }
 
 // join
-func (q *Query) join(p string, tb string, alias ...string) *Query {
-    q.Sql["Join"] += fmt.Sprintf(" %s JOIN %s %s ", p, tb, tableAlias(alias))
+func (q *Query) join(p string, tb string) *Query {
+    q.Sql["Join"] += fmt.Sprintf(" %s JOIN %s ", p, tb)
     q.current = "Join"
     return q
 }
 
 // Join
-func (q *Query) Join(tb string, alias ...string) *Query {
-    return q.join("", tb, alias...)
+func (q *Query) Join(tb string) *Query {
+    return q.join("", tb)
 }
 
 // Join Inner
-func (q *Query) InnerJoin(tb string, alias ...string) *Query {
-    return q.join("INNER", tb, alias...)
+func (q *Query) InnerJoin(tb string) *Query {
+    return q.join("INNER", tb)
 }
 
 // Join Outer
-func (q *Query) OuterJoin(tb string, alias ...string) *Query {
-    return q.join("OUTER", tb, alias...)
+func (q *Query) OuterJoin(tb string) *Query {
+    return q.join("OUTER", tb)
 }
 
 // Join Left
-func (q *Query) LeftJoin(tb string, alias ...string) *Query {
-    return q.join("LEFT", tb, alias...)
+func (q *Query) LeftJoin(tb string) *Query {
+    return q.join("LEFT", tb)
 }
 
 // Join Right
-func (q *Query) RightJoin(tb string, alias ...string) *Query {
-    return q.join("RIGHT", tb, alias...)
+func (q *Query) RightJoin(tb string) *Query {
+    return q.join("RIGHT", tb)
 }
 
 // Join On
@@ -286,7 +287,7 @@ func (q *Query) GroupBy(f ...string) *Query {
     return q
 }
 
-// Having
+// Having8jm
 func (q *Query) Having(qs ...*Query) *Query {
     q.Sql["Having"] = fmt.Sprintf(" HAVING %s ", q.sqlCond)
     q.sqlCond = ""

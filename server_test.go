@@ -5,9 +5,10 @@
 package db
 
 import (
-    "database/sql"
     "io/ioutil"
     "testing"
+    "fmt"
+    "strings"
 )
 
 /*
@@ -16,195 +17,133 @@ CREATE DATABASE `zhgo` CHARACTER SET utf8 COLLATE utf8_general_ci;
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, LOCK TABLES ON `zhgo`.* TO 'zhgo'@'localhost';
 */
 
-func TestServerMysql(t *testing.T) {
-    var q string
-    var r sql.Result
+type ServerTest struct {
+    // Server
+    Server *Server
+}
 
-    server := NewServer("test-mysql", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
-
-
-    // Load table1.sql
-    b, err := ioutil.ReadFile("tb-mysql.sql")
+func (st *ServerTest) Init(t *testing.T) {
+    // Load sql file
+    p := fmt.Sprintf("tb-%s.sql", st.Server.Type)
+    b, err := ioutil.ReadFile(p)
     if err != nil {
-        t.Fatalf("Read files failed (tb-mysql.sql): %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
+    initSQL := strings.Split(string(b), ";")
 
-
-    // Drop table1
-    q = "DROP TABLE IF EXISTS table1"
-    _, err = server.Exec(q)
-    if err != nil {
-        t.Fatalf("Drop table1 failed: %v.\n", err)
-    }
-
-
-    // Create table1
-    _, err = server.Exec(string(b))
-    if err != nil {
-        t.Fatalf("Create table1 failed: %v.\n", err)
-    }
-
-
-    // Insert
-    q = "INSERT INTO table1(BirthYear, Gender, Nickname) VALUES('1980', 'Male', '张三丰')"
-    r, err = server.Exec(q)
-    if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
-    }
-    lastInsertId, err := r.LastInsertId()
-    if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
-    }
-    if lastInsertId != 1000000 {
-        t.Fatalf("Insert data to table1 failed: LastInsertId error.\n")
-    }
-
-
-    // Insert confirm
-    d := make(map[string]interface{})
-    q = "SELECT * FROM table1 WHERE UserID = ?"
-    err = server.Row(&d, q, 1000000)
-    if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
-    }
-    if d["BirthYear"] != int64(1980) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
-    }
-    if d["Gender"] != "Male" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
-    }
-    if d["Nickname"] != "张三丰" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
-    }
-
-
-    // Update
-    q = "UPDATE table1 SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = '1000000'"
-    r, err = server.Exec(q, 1982, "Female", "Bob")
-    if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
-    }
-    rowsAffected, err := r.RowsAffected()
-    if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
-    }
-    if rowsAffected <= 0 {
-        t.Fatalf("Update table1 failed.\n")
-    }
-
-
-    // Update confirm
-    d = make(map[string]interface{})
-    q = "SELECT * FROM table1 WHERE UserID = ?"
-    err = server.Row(&d, q, 1000000)
-    if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
-    }
-    if d["BirthYear"] != int64(1982) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
-    }
-    if d["Gender"] != "Female" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
-    }
-    if d["Nickname"] != "Bob" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
+    // Run Init SQL
+    for _, v := range initSQL {
+        if strings.Trim(v, "\r\n \t") != "" {
+            _, err := st.Server.Exec(v)
+            if err != nil {
+                t.Fatalf("[%s]: %v\n", st.Server.Type, err)
+            }
+        }
     }
 }
 
-func TestServerSqlite3(t *testing.T) {
-    var q string
-    var r sql.Result
+func (st *ServerTest) Load(t *testing.T) {
 
-    server := NewServer("test-sqlite3", "sqlite3", "sqlite3.db")
+}
 
+func (st *ServerTest) Start(t *testing.T) {
+    st.Insert(t)
+    st.Update(t)
+    st.Rows(t)
+}
 
-    // Load table1.sql
-    b, err := ioutil.ReadFile("tb-sqlite3.sql")
-    if err != nil {
-        t.Fatalf("Read files failed (tb-sqlite3.sql): %v.\n", err)
-    }
-
-
-    // Drop table1
-    q = "DROP TABLE IF EXISTS table1"
-    _, err = server.Exec(q)
-    if err != nil {
-        t.Fatalf("Drop table1 failed: %v.\n", err)
-    }
-
-
-    // Create table1
-    _, err = server.Exec(string(b))
-    if err != nil {
-        t.Fatalf("Create table1 failed: %v.\n", err)
-    }
-
-
+func (st *ServerTest) Insert(t *testing.T) {
     // Insert
-    q = "INSERT INTO table1(UserID, CreationTime, BirthYear, Gender, Nickname) VALUES(1000000, '1429091207', '1980', 'Male', '张三丰')"
-    r, err = server.Exec(q)
+    q := "INSERT INTO passport_user(UserID, CreationTime, BirthYear, Gender, Nickname) VALUES('1000000', '2015-01-17 00:00:00', '1980', 'Male', '肯·汤普逊')"
+    r, err := st.Server.Exec(q)
     if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
     lastInsertId, err := r.LastInsertId()
     if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
     if lastInsertId != 1000000 {
-        t.Fatalf("Insert data to table1 failed: LastInsertId error.\n")
+        t.Fatalf("[%s]: %v\n", st.Server.Type, lastInsertId)
     }
 
 
     // Insert confirm
     d := make(map[string]interface{})
-    q = "SELECT * FROM table1 WHERE UserID = ?"
-    err = server.Row(&d, q, 1000000)
+    q = "SELECT * FROM passport_user WHERE UserID = ?"
+    err = st.Server.Row(&d, q, 1000000)
     if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
-    if d["CreationTime"] != int64(1429091207) {
-        t.Fatalf("table1 data error (CreationTime): %v.\n", d["CreationTime"])
-    }
-    if d["BirthYear"] != int64(1980) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
-    }
-    if d["Gender"] != "Male" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
-    }
-    if d["Nickname"] != "张三丰" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
-    }
+    st.dataValidation(t, d["CreationTime"], "2015-01-17 00:00:00")
+    st.dataValidation(t, d["BirthYear"], int64(1980))
+    st.dataValidation(t, d["Gender"], "Male")
+    st.dataValidation(t, d["Nickname"], "肯·汤普逊")
+}
 
-
+func (st *ServerTest) Update(t *testing.T) {
     // Update
-    q = "UPDATE table1 SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = '1000000'"
-    r, err = server.Exec(q, 1982, "Female", "Bob")
+    q := "UPDATE passport_user SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = '1000000'"
+    r, err := st.Server.Exec(q, 1982, "Female", "Bob")
     if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
     rowsAffected, err := r.RowsAffected()
     if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
     if rowsAffected <= 0 {
-        t.Fatalf("Update table1 failed.\n")
+        t.Fatalf("[%s] Update Failed: %v\n", st.Server.Type, rowsAffected)
     }
 
 
     // Update confirm
-    d = make(map[string]interface{})
-    q = "SELECT * FROM table1 WHERE UserID = ?"
-    err = server.Row(&d, q, 1000000)
+    d := make(map[string]interface{})
+    q = "SELECT * FROM passport_user WHERE UserID = ?"
+    err = st.Server.Row(&d, q, 1000000)
     if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
-    if d["BirthYear"] != int64(1982) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
+    st.dataValidation(t, d["CreationTime"], "2015-01-17 00:00:00")
+    st.dataValidation(t, d["BirthYear"], int64(1982))
+    st.dataValidation(t, d["Gender"], "Female")
+    st.dataValidation(t, d["Nickname"], "Bob")
+}
+
+func (st *ServerTest) Rows(t *testing.T) {
+    d := []map[string]interface{}{}
+    q := "SELECT * FROM passport_user WHERE UserID > ?"
+    err := st.Server.Rows(&d, q, 1)
+    if err != nil {
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
-    if d["Gender"] != "Female" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
+    if len(d) != 1 {
+        t.Fatalf("[%s] Returns the number of rows of data is incorrect: %v\n", st.Server.Type, len(d))
     }
-    if d["Nickname"] != "Bob" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
+    st.dataValidation(t, d[0]["CreationTime"], "2015-01-17 00:00:00")
+    st.dataValidation(t, d[0]["BirthYear"], int64(1982))
+    st.dataValidation(t, d[0]["Gender"], "Female")
+    st.dataValidation(t, d[0]["Nickname"], "Bob")
+}
+
+func (st *ServerTest) dataValidation(t *testing.T, l, r interface{}) {
+    if l != r {
+        t.Fatalf("[%s] Value validation fails: %v\t%v\n", st.Server.Type, l, r)
     }
+}
+
+func NewServerTest(typ string, dsn string) *ServerTest {
+    s := ServerTest{}
+    s.Server = NewServer(typ, typ, dsn)
+    return &s
+}
+
+func TestServer(t *testing.T) {
+    st := NewServerTest("mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
+    st.Init(t)
+    st.Start(t)
+
+    st = NewServerTest("sqlite3", "sqlite3.db")
+    st.Init(t)
+    st.Start(t)
 }

@@ -7,200 +7,143 @@ package db
 import (
     "testing"
     "io/ioutil"
+    "fmt"
+    "strings"
 )
 
-func TestQueryMysql(t *testing.T) {
-    server := Server{
-        Name: "test-mysql",
-        Type: "mysql",
-        DSN: "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8"}
+type QueryTest struct {
+    // Query
+    Query *Query
+}
 
-
-    // Load tb-mysql.sql
-    b, err := ioutil.ReadFile("tb-mysql.sql")
+func (qt *QueryTest) Init(t *testing.T) {
+    // Load sql file
+    p := fmt.Sprintf("tb-%s.sql", qt.Query.Server.Type)
+    b, err := ioutil.ReadFile(p)
     if err != nil {
-        t.Fatalf("Read files failed (tb-mysql.sql): %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
+    initSQL := strings.Split(string(b), ";")
 
-
-    // Drop table1
-    query := NewQuery(&server)
-    err = query.DropTable("table1")
-    if err != nil {
-        t.Fatalf("Drop table1 failed: %v.\n", err)
-    }
-
-
-    // Create table1
-    query = NewQuery(&server)
-    _, err = query.Server.Exec(string(b))
-    if err != nil {
-        t.Fatalf("Create table1 failed: %v.\n", err)
-    }
-
-
-    // Insert
-    query = NewQuery(&server)
-    query.InsertInto("table1")
-    query.Fields("BirthYear", "Gender", "Nickname")
-    query.Values("1980", "Male", "张三丰")
-    r, err := query.Exec()
-    if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
-    }
-    lastInsertId, err := r.LastInsertId()
-    if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
-    }
-    if lastInsertId != 1000000 {
-        t.Fatalf("Insert data to table1 failed: LastInsertId error.\n")
-    }
-
-
-    // Insert confirm
-    d := make(map[string]interface{})
-    query = NewQuery(&server)
-    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
-    if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
-    }
-    if d["BirthYear"] != int64(1980) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
-    }
-    if d["Gender"] != "Male" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
-    }
-    if d["Nickname"] != "张三丰" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
-    }
-
-
-    // Update
-    query = NewQuery(&server)
-    r, err = query.Update("table1").Set("BirthYear", "1982").Set("Gender", "Female").Set("Nickname", "Bob").Where(query.Eq("UserID", "1000000")).Exec()
-    if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
-    }
-    rowsAffected, err := r.RowsAffected()
-    if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
-    }
-    if rowsAffected <= 0 {
-        t.Fatalf("Update table1 failed.\n")
-    }
-
-    // Update confirm
-    d = make(map[string]interface{})
-    query = NewQuery(&server)
-    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
-    if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
-    }
-    if d["BirthYear"] != int64(1982) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
-    }
-    if d["Gender"] != "Female" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
-    }
-    if d["Nickname"] != "Bob" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
+    // Run Init SQL
+    for _, v := range initSQL {
+        if strings.Trim(v, "\r\n \t") != "" {
+            _, err := qt.Query.Server.Exec(v)
+            if err != nil {
+                t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
+            }
+        }
     }
 }
 
-func TestQuerySqlite3(t *testing.T) {
-    server := NewServer("test-sqlite3", "sqlite3", "sqlite3.db")
+func (qt *QueryTest) Load(t *testing.T) {
 
+}
 
-    // Load tb-sqlite3.sql
-    b, err := ioutil.ReadFile("tb-sqlite3.sql")
-    if err != nil {
-        t.Fatalf("Read files failed (tb-sqlite3.sql): %v.\n", err)
-    }
+func (qt *QueryTest) Start(t *testing.T) {
+    qt.Insert(t)
+    qt.Update(t)
+    qt.Rows(t)
+}
 
-
-    // Drop table1
-    query := NewQuery(server)
-    err = query.DropTable("table1")
-    if err != nil {
-        t.Fatalf("Drop table1 failed: %v.\n", err)
-    }
-
-
-    // Create table1
-    query = NewQuery(server)
-    _, err = query.Server.Exec(string(b))
-    if err != nil {
-        t.Fatalf("Create table1 failed: %v.\n", err)
-    }
-
-
+func (qt *QueryTest) Insert(t *testing.T) {
     // Insert
-    query = NewQuery(server)
-    query.InsertInto("table1")
-    query.Fields("UserID", "CreationTime", "BirthYear", "Gender", "Nickname")
-    query.Values("1000000", "1429091207", "1980", "Male", "张三丰")
-    r, err := query.Exec()
+    q := NewQuery(qt.Query.Server)
+    q.InsertInto("passport_user")
+    q.Fields("UserID", "CreationTime", "BirthYear", "Gender", "Nickname")
+    q.Values(1000000, "2015-01-17 00:00:00", 1980, "Male", "肯·汤普逊")
+    r, err := q.Exec()
     if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
     lastInsertId, err := r.LastInsertId()
     if err != nil {
-        t.Fatalf("Insert data to table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
     if lastInsertId != 1000000 {
-        t.Fatalf("Insert data to table1 failed: LastInsertId error.\n")
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, lastInsertId)
     }
 
 
     // Insert confirm
     d := make(map[string]interface{})
-    query = NewQuery(server)
-    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
+    q = NewQuery(qt.Query.Server)
+    err = q.Select("*").From("passport_user").Where(q.Eq("UserID", 1000000)).Row(&d)
     if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    if d["CreationTime"] != int64(1429091207) {
-        t.Fatalf("table1 data error (CreationTime): %v.\n", d["CreationTime"])
-    }
-    if d["BirthYear"] != int64(1980) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
-    }
-    if d["Gender"] != "Male" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
-    }
-    if d["Nickname"] != "张三丰" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
-    }
+    qt.dataValidation(t, d["CreationTime"], "2015-01-17 00:00:00")
+    qt.dataValidation(t, d["BirthYear"], int64(1980))
+    qt.dataValidation(t, d["Gender"], "Male")
+    qt.dataValidation(t, d["Nickname"], "肯·汤普逊")
+}
 
-
+func (qt *QueryTest) Update(t *testing.T) {
     // Update
-    query = NewQuery(server)
-    r, err = query.Update("table1").Set("BirthYear", "1982").Set("Gender", "Female").Set("Nickname", "Bob").Where(query.Eq("UserID", "1000000")).Exec()
+    q := NewQuery(qt.Query.Server)
+    r, err := q.Update("passport_user").Set("BirthYear", 1982).Set("Gender", "Female").Set("Nickname", "Bob").Where(q.Eq("UserID", 1000000)).Exec()
     if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
     rowsAffected, err := r.RowsAffected()
     if err != nil {
-        t.Fatalf("Update table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
     if rowsAffected <= 0 {
-        t.Fatalf("Update table1 failed.\n")
+        t.Fatalf("[%s] Update Failed: %v\n", qt.Query.Server.Type, rowsAffected)
     }
 
+
     // Update confirm
-    d = make(map[string]interface{})
-    query = NewQuery(server)
-    err = query.Select("*").From("table1").Where(query.Eq("UserID", "1000000")).Row(&d)
+    d := make(map[string]interface{})
+    q = NewQuery(qt.Query.Server)
+    err = q.Select("*").From("passport_user").Where(q.Eq("UserID", 1000000)).Row(&d)
     if err != nil {
-        t.Fatalf("Select table1 failed: %v.\n", err)
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    if d["BirthYear"] != int64(1982) {
-        t.Fatalf("table1 data error (BirthYear): %v.\n", d["BirthYear"])
+    qt.dataValidation(t, d["CreationTime"], "2015-01-17 00:00:00")
+    qt.dataValidation(t, d["BirthYear"], int64(1982))
+    qt.dataValidation(t, d["Gender"], "Female")
+    qt.dataValidation(t, d["Nickname"], "Bob")
+}
+
+func (qt *QueryTest) Rows(t *testing.T) {
+    d := []map[string]interface{}{}
+    q := NewQuery(qt.Query.Server)
+    err := q.Select("*").From("passport_user").Where(q.Gt("UserID", 1)).Rows(&d)
+    if err != nil {
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    if d["Gender"] != "Female" {
-        t.Fatalf("table1 data error (Gender): %v.\n", d["Gender"])
+    if len(d) != 1 {
+        t.Fatalf("[%s] Returns the number of rows of data is incorrect: %v\n", qt.Query.Server.Type, len(d))
     }
-    if d["Nickname"] != "Bob" {
-        t.Fatalf("table1 data error (Nickname): %v.\n", d["Nickname"])
+    qt.dataValidation(t, d[0]["CreationTime"], "2015-01-17 00:00:00")
+    qt.dataValidation(t, d[0]["BirthYear"], int64(1982))
+    qt.dataValidation(t, d[0]["Gender"], "Female")
+    qt.dataValidation(t, d[0]["Nickname"], "Bob")
+}
+
+func (qt *QueryTest) dataValidation(t *testing.T, l, r interface{}) {
+    if l != r {
+        t.Fatalf("[%s] Value validation fails: %v\t%v\n", qt.Query.Server.Type, l, r)
     }
+}
+
+func NewQueryTest(typ string, dsn string) *QueryTest {
+    s := NewServer(typ, typ, dsn)
+    qt := QueryTest{}
+    qt.Query = NewQuery(s)
+    return &qt
+}
+
+func TestQuery(t *testing.T) {
+    st := NewQueryTest("mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
+    st.Init(t)
+    st.Load(t)
+    st.Start(t)
+
+    st = NewQueryTest("sqlite3", "sqlite3.db")
+    st.Init(t)
+    st.Load(t)
+    st.Start(t)
 }
