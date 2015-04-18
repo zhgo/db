@@ -50,6 +50,7 @@ func (st *ServerTest) Start(t *testing.T) {
     st.Insert(t)
     st.Update(t)
     st.Rows(t)
+    st.Delete(t)
 }
 
 func (st *ServerTest) Insert(t *testing.T) {
@@ -83,8 +84,8 @@ func (st *ServerTest) Insert(t *testing.T) {
 
 func (st *ServerTest) Update(t *testing.T) {
     // Update
-    q := "UPDATE passport_user SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = '1000000'"
-    r, err := st.Server.Exec(q, 1982, "Female", "Bob")
+    q := "UPDATE passport_user SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = ?"
+    r, err := st.Server.Exec(q, 1982, "Female", "Bob", 1000000)
     if err != nil {
         t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
@@ -108,6 +109,22 @@ func (st *ServerTest) Update(t *testing.T) {
     st.dataValidation(t, d["BirthYear"], int64(1982))
     st.dataValidation(t, d["Gender"], "Female")
     st.dataValidation(t, d["Nickname"], "Bob")
+}
+
+func (st *ServerTest) Delete(t *testing.T) {
+    // Delete
+    q := "DELETE FROM passport_user WHERE UserID = ?"
+    r, err := st.Server.Exec(q, 1000000)
+    if err != nil {
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
+    }
+    rowsAffected, err := r.RowsAffected()
+    if err != nil {
+        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
+    }
+    if rowsAffected != 1 {
+        t.Fatalf("[%s] Delete Failed: %v\n", st.Server.Type, rowsAffected)
+    }
 }
 
 func (st *ServerTest) Rows(t *testing.T) {

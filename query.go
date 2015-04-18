@@ -287,7 +287,7 @@ func (q *Query) GroupBy(f ...string) *Query {
     return q
 }
 
-// Having8jm
+// Having
 func (q *Query) Having(qs ...*Query) *Query {
     q.Sql["Having"] = fmt.Sprintf(" HAVING %s ", q.sqlCond)
     q.sqlCond = ""
@@ -484,15 +484,6 @@ func (q *Query) Rows(ptr interface{}, d ...map[string]interface{}) error {
         q.mapToWhere(d[0])
     }
     return q.Server.Rows(ptr, q.ToString(), q.Args...)
-}
-
-// Drop Table
-func (q *Query) DropTable(tb string) error {
-    if q.Server == nil {
-        return errors.New("DB config not found")
-    }
-    _, err := q.Server.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", tb))
-    return err
 }
 
 

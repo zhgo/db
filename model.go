@@ -5,6 +5,7 @@
 package db
 
 import (
+    "reflect"
 )
 
 // Model struct
@@ -18,11 +19,6 @@ type Model struct {
 
 // Server list
 var Servers = make(map[string]*Server)
-
-// New Model
-func NewModel(module string, table Table) *Model {
-    return &Model{Module: module, Table: table}
-}
 
 // Insert
 func (m *Model) Insert() *Query {
@@ -53,3 +49,30 @@ func (m *Model) Select() *Query {
     return q
 }
 
+// New Model
+func NewModel(module string, table Table) *Model {
+    return &Model{Module: module, Table: table}
+}
+
+
+// Table struct
+type Table struct {
+    // Table name
+    Name string
+
+    // Table primary
+    Primary string
+
+    // All fields, except primary
+    Fields []string
+
+    // Entity
+    EntityType reflect.Type
+}
+
+// New Table
+func NewTable(tableName string, entity interface{}) Table {
+    p, f := tableFields(entity)
+    t := Table{Name: tableName, Primary: p, Fields: f, EntityType: reflect.ValueOf(entity).Elem().Type()}
+    return t
+}
