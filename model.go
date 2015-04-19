@@ -42,9 +42,12 @@ func (m *Model) Delete() *Query {
 }
 
 // Select
-func (m *Model) Select() *Query {
+func (m *Model) Select(f ...string) *Query {
+    if len(f) == 0 {
+        f = m.Table.Fields
+    }
     q := NewQuery(Servers[m.Module])
-    q.Select(m.Table.Fields...)
+    q.Select(f...)
     q.From(m.Table.Name)
     return q
 }
