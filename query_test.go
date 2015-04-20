@@ -223,7 +223,7 @@ func TestQuery(t *testing.T) {
     st.Load(t)
     st.Start(t)
 
-    st = NewQueryTest("postgres", "user=LD dbname=zhgo sslmode=disable")
+    st = NewQueryTest("postgres", "user=postgres dbname=zhgo sslmode=disable")
     //st = NewServerTest("postgres", "postgres://LD:@localhost:5432/zhgo?sslmode=verify-full")
     st.Init(t)
     st.Load(t)

@@ -181,7 +181,7 @@ func TestServer(t *testing.T) {
     st.Init(t)
     st.Start(t)
 
-    st = NewServerTest("postgres", "user=LD dbname=zhgo sslmode=disable")
+    st = NewServerTest("postgres", "user=postgres dbname=zhgo sslmode=disable")
     //st = NewServerTest("postgres", "postgres://LD:@localhost:5432/zhgo?sslmode=verify-full")
     st.Init(t)
     st.Start(t)
