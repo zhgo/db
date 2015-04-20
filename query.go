@@ -505,6 +505,7 @@ func (q *Query) Exec(d ...map[string]interface{}) (Result, error) {
             q.mapToInsert(d[0])
         }
 
+        // https://github.com/lib/pq/issues/24
         if q.Server.Type == "postgres" {
             q.Sql["Returning"] = fmt.Sprintf("RETURNING %s", q.quoteField(q.Primary))
             row := make(map[string]interface{})

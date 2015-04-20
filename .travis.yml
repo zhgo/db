@@ -1,3 +1,6 @@
 language: go
+addons:
+  postgresql: "9.3"
 before_script:
   - mysql -e "CREATE DATABASE zhgo CHARACTER SET utf8 COLLATE utf8_general_ci;" -uroot
+  - psql -c 'create database zhgo;' -U LD

@@ -1,0 +1,4 @@
+*.iml
+*.exe
+.idea
+sqlite3.db
