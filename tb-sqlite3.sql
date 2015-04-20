@@ -10,7 +10,7 @@ CREATE TABLE "passport_login" (
   "UserAgent" TEXT NOT NULL
 );
 
-UPDATE "sqlite_sequence" SET "seq" = 1000000 WHERE "name" = "passport_login";
+INSERT INTO "sqlite_sequence"("name", "seq") VALUES("passport_login", 999999);
 
 DROP TABLE IF EXISTS "passport_user";
 CREATE TABLE "passport_user" (
@@ -21,4 +21,4 @@ CREATE TABLE "passport_user" (
   "Nickname" TEXT NOT NULL
 );
 
-UPDATE "sqlite_sequence" SET "seq" = 1000000 WHERE "name" = "passport_user";
+INSERT INTO "sqlite_sequence"("name", "seq") VALUES("passport_user", 999999);

@@ -51,16 +51,13 @@ func (qt *QueryTest) Insert(t *testing.T) {
     // Insert
     q := NewQuery(qt.Query.Server)
     q.InsertInto("passport_user")
+    q.SetPrimary("UserID") // PostgreSQL compatibility
     r, err := q.Fields("UserID", "CreationTime", "BirthYear", "Gender", "Nickname").Values(1000000, "2015-01-17 00:00:00", 1980, "Male", "肯·汤普逊").Exec()
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    lastInsertId, err := r.LastInsertId()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
-    }
-    if lastInsertId != 1000000 {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, lastInsertId)
+    if r.LastInsertId != 1000000 {
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, r.LastInsertId)
     }
 
 
@@ -85,16 +82,13 @@ func (qt *QueryTest) Insert(t *testing.T) {
         "Gender": "Secret",
         "Nickname": "阿里马马"}
     q = NewQuery(qt.Query.Server)
+    q.SetPrimary("UserID") // PostgreSQL compatibility
     r, err = q.InsertInto("passport_user").Exec(d)
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    lastInsertId, err = r.LastInsertId()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
-    }
-    if lastInsertId != 1000001 {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, lastInsertId)
+    if r.LastInsertId != 1000001 {
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, r.LastInsertId)
     }
 
 
@@ -118,12 +112,8 @@ func (qt *QueryTest) Update(t *testing.T) {
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    rowsAffected, err := r.RowsAffected()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
-    }
-    if rowsAffected != 1 {
-        t.Fatalf("[%s] Update Failed: %v\n", qt.Query.Server.Type, rowsAffected)
+    if r.RowsAffected != 1 {
+        t.Fatalf("[%s] Update Failed: %v\n", qt.Query.Server.Type, r.RowsAffected)
     }
 
 
@@ -152,12 +142,8 @@ func (qt *QueryTest) Update(t *testing.T) {
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    rowsAffected, err = r.RowsAffected()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
-    }
-    if rowsAffected != 1 {
-        t.Fatalf("[%s] Update Failed: %v\n", qt.Query.Server.Type, rowsAffected)
+    if r.RowsAffected != 1 {
+        t.Fatalf("[%s] Update Failed: %v\n", qt.Query.Server.Type, r.RowsAffected)
     }
 
 
@@ -181,12 +167,8 @@ func (qt *QueryTest) Delete(t *testing.T) {
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    rowsAffected, err := r.RowsAffected()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
-    }
-    if rowsAffected != 1 {
-        t.Fatalf("[%s] Delete Failed: %v\n", qt.Query.Server.Type, rowsAffected)
+    if r.RowsAffected != 1 {
+        t.Fatalf("[%s] Delete Failed: %v\n", qt.Query.Server.Type, r.RowsAffected)
     }
 
     // Delete
@@ -196,12 +178,8 @@ func (qt *QueryTest) Delete(t *testing.T) {
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
-    rowsAffected, err = r.RowsAffected()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
-    }
-    if rowsAffected != 1 {
-        t.Fatalf("[%s] Delete Failed: %v\n", qt.Query.Server.Type, rowsAffected)
+    if r.RowsAffected != 1 {
+        t.Fatalf("[%s] Delete Failed: %v\n", qt.Query.Server.Type, r.RowsAffected)
     }
 }
 
@@ -241,6 +219,12 @@ func TestQuery(t *testing.T) {
     st.Start(t)
 
     st = NewQueryTest("sqlite3", "sqlite3.db")
+    st.Init(t)
+    st.Load(t)
+    st.Start(t)
+
+    st = NewQueryTest("postgres", "user=LD dbname=zhgo sslmode=disable")
+    //st = NewServerTest("postgres", "postgres://LD:@localhost:5432/zhgo?sslmode=verify-full")
     st.Init(t)
     st.Load(t)
     st.Start(t)

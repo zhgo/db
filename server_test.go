@@ -55,24 +55,41 @@ func (st *ServerTest) Start(t *testing.T) {
 
 func (st *ServerTest) Insert(t *testing.T) {
     // Insert
-    q := "INSERT INTO passport_user(UserID, CreationTime, BirthYear, Gender, Nickname) VALUES('1000000', '2015-01-17 00:00:00', '1980', 'Male', '肯·汤普逊')"
-    r, err := st.Server.Exec(q)
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
-    }
-    lastInsertId, err := r.LastInsertId()
-    if err != nil {
-        t.Fatalf("[%s]: %v\n", st.Server.Type, err)
-    }
-    if lastInsertId != 1000000 {
-        t.Fatalf("[%s]: %v\n", st.Server.Type, lastInsertId)
+    vs := []interface{}{1000000, "2015-01-17 00:00:00", 1980, "Male", "肯·汤普逊"}
+    q := `INSERT INTO "passport_user" ("UserID", "CreationTime", "BirthYear", "Gender", "Nickname") VALUES($1, $2, $3, $4, $5)`
+    if st.Server.Type == "postgres" {
+        q = `INSERT INTO "passport_user" ("UserID", "CreationTime", "BirthYear", "Gender", "Nickname") VALUES($1, $2, $3, $4, $5) RETURNING *`
+        row := make(map[string]interface{})
+        err := st.Server.Row(&row, q, vs...)
+        if err != nil {
+            t.Fatalf("[%s]: %v\n", st.Server.Type, err)
+        }
+        lastInsertId, ok := row["UserID"]
+        if !ok {
+            t.Fatalf("[%s]: Insert failed\n", st.Server.Type)
+        }
+        if 1000000 != lastInsertId.(int64) {
+            t.Fatalf("[%s]: %v\n", st.Server.Type, lastInsertId)
+        }
+    } else {
+        r, err := st.Server.Exec(q, vs...)
+        if err != nil {
+            t.Fatalf("[%s]: %v\n", st.Server.Type, err)
+        }
+        lastInsertId, err := r.LastInsertId()
+        if err != nil {
+            t.Fatalf("[%s]: %v\n", st.Server.Type, err)
+        }
+        if lastInsertId != 1000000 {
+            t.Fatalf("[%s]: %v\n", st.Server.Type, lastInsertId)
+        }
     }
 
 
     // Insert confirm
     d := make(map[string]interface{})
-    q = "SELECT * FROM passport_user WHERE UserID = ?"
-    err = st.Server.Row(&d, q, 1000000)
+    q = `SELECT * FROM "passport_user" WHERE "UserID" = $1`
+    err := st.Server.Row(&d, q, 1000000)
     if err != nil {
         t.Fatalf("[%s]: %v\n", st.Server.Type, err)
     }
@@ -84,7 +101,7 @@ func (st *ServerTest) Insert(t *testing.T) {
 
 func (st *ServerTest) Update(t *testing.T) {
     // Update
-    q := "UPDATE passport_user SET BirthYear = ?, Gender = ?, Nickname = ? WHERE UserID = ?"
+    q := `UPDATE "passport_user" SET "BirthYear" = $1, "Gender" = $2, "Nickname" = $3 WHERE "UserID" = $4`
     r, err := st.Server.Exec(q, 1982, "Female", "Bob", 1000000)
     if err != nil {
         t.Fatalf("[%s]: %v\n", st.Server.Type, err)
@@ -100,7 +117,7 @@ func (st *ServerTest) Update(t *testing.T) {
 
     // Update confirm
     d := make(map[string]interface{})
-    q = "SELECT * FROM passport_user WHERE UserID = ?"
+    q = `SELECT * FROM "passport_user" WHERE "UserID" = $1`
     err = st.Server.Row(&d, q, 1000000)
     if err != nil {
         t.Fatalf("[%s]: %v\n", st.Server.Type, err)
@@ -113,7 +130,7 @@ func (st *ServerTest) Update(t *testing.T) {
 
 func (st *ServerTest) Delete(t *testing.T) {
     // Delete
-    q := "DELETE FROM passport_user WHERE UserID = ?"
+    q := `DELETE FROM "passport_user" WHERE "UserID" = $1`
     r, err := st.Server.Exec(q, 1000000)
     if err != nil {
         t.Fatalf("[%s]: %v\n", st.Server.Type, err)
@@ -129,7 +146,7 @@ func (st *ServerTest) Delete(t *testing.T) {
 
 func (st *ServerTest) Rows(t *testing.T) {
     d := []map[string]interface{}{}
-    q := "SELECT * FROM passport_user WHERE UserID > ?"
+    q := `SELECT * FROM "passport_user" WHERE "UserID" > $1`
     err := st.Server.Rows(&d, q, 1)
     if err != nil {
         t.Fatalf("[%s]: %v\n", st.Server.Type, err)
@@ -161,6 +178,11 @@ func TestServer(t *testing.T) {
     st.Start(t)
 
     st = NewServerTest("sqlite3", "sqlite3.db")
+    st.Init(t)
+    st.Start(t)
+
+    st = NewServerTest("postgres", "user=LD dbname=zhgo sslmode=disable")
+    //st = NewServerTest("postgres", "postgres://LD:@localhost:5432/zhgo?sslmode=verify-full")
     st.Init(t)
     st.Start(t)
 }

@@ -8,8 +8,12 @@ import (
     "database/sql"
     _ "github.com/go-sql-driver/mysql"
     _ "github.com/mxk/go-sqlite/sqlite3"
+    _ "github.com/lib/pq"
     "log"
     "reflect"
+    "regexp"
+    "strconv"
+    "strings"
 )
 
 // Server struct
@@ -32,6 +36,7 @@ var dbObjects map[string]*sql.DB = make(map[string]*sql.DB)
 
 // Execute query, only return sql.Result
 func (e *Server) Exec(sql string, args ...interface{}) (sql.Result, error) {
+    sql, args = e.parseSQL(sql, args)
     stmt, err := e.prepare(sql)
     if err != nil {
         return nil, err
@@ -159,6 +164,7 @@ func (e *Server) Rows(ptr interface{}, sql string, args ...interface{}) error {
 
 // Execute query, return sql.Rows, rows.Columns
 func (e *Server) rows(sql string, args []interface{}) (*sql.Rows, []string, error) {
+    sql, args = e.parseSQL(sql, args)
     stmt, err := e.prepare(sql)
     if err != nil {
         return nil, nil, err
@@ -206,6 +212,40 @@ func (e *Server) connect() error {
     }
 
     return nil
+}
+
+// sql compatibility
+func (e *Server) parseSQL(str string, args []interface{}) (string, []interface{}) {
+    switch e.Type {
+        case "postgres":
+        return str, args
+        case "mysql":
+        str = e.parseQuotes(str)
+        return e.parseParameters(str, args)
+        case "sqlite3":
+        return e.parseParameters(str, args)
+    }
+    return str, args
+}
+
+// " to `
+func (e *Server) parseQuotes(str string) string {
+    return strings.Replace(str, `"`, "`", -1)
+}
+
+// $1, $2, $3 to ?, ?, ?
+func (e *Server) parseParameters(str string, args []interface{}) (string, []interface{}) {
+    re := regexp.MustCompile(`\$(\d+)`)
+    sli := re.FindAllStringSubmatch(str, -1)
+    newArgs := make([]interface{}, len(sli))
+    for i, v := range sli {
+        vi, err := strconv.ParseInt(v[1], 10, 0)
+        if err != nil {
+            log.Printf("%s\n", err)
+        }
+        newArgs[i] = args[vi-1]
+    }
+    return re.ReplaceAllString(str, "?"), newArgs
 }
 
 // New Server
