@@ -17,6 +17,21 @@ type Model struct {
     Table Table
 }
 
+// Table struct
+type Table struct {
+    // Table name
+    Name string
+
+    // Table primary
+    Primary string
+
+    // All fields, except primary
+    Fields []string
+
+    // Entity
+    EntityType reflect.Type
+}
+
 // Server list
 var Servers = make(map[string]*Server)
 
@@ -55,22 +70,6 @@ func (m *Model) Select(f ...string) *Query {
 // New Model
 func NewModel(module string, table Table) *Model {
     return &Model{Module: module, Table: table}
-}
-
-
-// Table struct
-type Table struct {
-    // Table name
-    Name string
-
-    // Table primary
-    Primary string
-
-    // All fields, except primary
-    Fields []string
-
-    // Entity
-    EntityType reflect.Type
 }
 
 // New Table
