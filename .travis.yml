@@ -1,6 +1,14 @@
 language: go
+go:
+  - tip
 addons:
   postgresql: "9.3"
 before_script:
   - mysql -e "CREATE DATABASE zhgo CHARACTER SET utf8 COLLATE utf8_general_ci;" -uroot
   - psql -c 'create database zhgo;' -U postgres
+before_install:
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+  - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
+script:
+    - $HOME/gopath/bin/goveralls -service=travis-ci

@@ -68,13 +68,6 @@ type Result struct {
     RowsAffected int64
 }
 
-// Condition
-type Condition struct {
-    Sql string
-
-    Args []interface{}
-}
-
 
 // Equal
 func (q *Query) Eq(f string, v interface{}) string {
