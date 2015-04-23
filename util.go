@@ -10,6 +10,12 @@ import (
     "reflect"
 )
 
+// Item
+type Item map[string]interface{}
+
+// Where
+type Where map[string]interface{}
+
 // Get scan variables
 func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, interface{}, []interface{}, error) {
     typ := reflect.ValueOf(ptr).Type()

@@ -62,7 +62,7 @@ func (qt *QueryTest) Insert(t *testing.T) {
 
 
     // Insert confirm
-    d := make(map[string]interface{})
+    d := make(Item)
     q = NewQuery(qt.Query.Server)
     err = q.Select("*").From("passport_user").Where(q.Eq("UserID", 1000000)).Row(&d)
     if err != nil {
@@ -75,7 +75,7 @@ func (qt *QueryTest) Insert(t *testing.T) {
 
 
     // Insert
-    d = map[string]interface{}{
+    d = Item{
         "UserID": 1000001,
         "CreationTime": "2015-01-17 01:00:00",
         "BirthYear": 1986,
@@ -118,8 +118,8 @@ func (qt *QueryTest) Update(t *testing.T) {
 
 
     // Update confirm
-    d := make(map[string]interface{})
-    w := map[string]interface{}{"UserID": 1000000}
+    d := make(Item)
+    w := Where{"UserID": 1000000}
     q = NewQuery(qt.Query.Server)
     err = q.Select("*").From("passport_user").Row(&d, w)
     if err != nil {
@@ -132,11 +132,11 @@ func (qt *QueryTest) Update(t *testing.T) {
 
 
     // Update
-    d = map[string]interface{}{
+    d = Item{
         "BirthYear": 1988,
         "Gender": "Male",
         "Nickname": "C语言"}
-    w = map[string]interface{}{"UserID": 1000001}
+    w = Where{"UserID": 1000001}
     q = NewQuery(qt.Query.Server)
     r, err = q.Update("passport_user").Exec(d, w)
     if err != nil {
@@ -148,9 +148,9 @@ func (qt *QueryTest) Update(t *testing.T) {
 
 
     // Update confirm
-    d = make(map[string]interface{})
+    d = make(Item)
     q = NewQuery(qt.Query.Server)
-    err = q.Select("*").From("passport_user").Row(&d, w)
+    err = q.Select().From("passport_user").Row(&d, w)
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }
@@ -172,7 +172,7 @@ func (qt *QueryTest) Delete(t *testing.T) {
     }
 
     // Delete
-    w := map[string]interface{}{"UserID": 1000001}
+    w := Where{"UserID": 1000001}
     q = NewQuery(qt.Query.Server)
     r, err = q.DeleteFrom("passport_user").Exec(w)
     if err != nil {
@@ -184,9 +184,25 @@ func (qt *QueryTest) Delete(t *testing.T) {
 }
 
 func (qt *QueryTest) Rows(t *testing.T) {
-    d := []map[string]interface{}{}
+    // Rows
+    d := []Item{}
     q := NewQuery(qt.Query.Server)
     err := q.Select("*").From("passport_user").Where(q.In("UserID", 1000000, 1000001)).Rows(&d)
+    if err != nil {
+        t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
+    }
+    if len(d) != 2 {
+        t.Fatalf("[%s] Returns the number of rows of data is incorrect: %v\n", qt.Query.Server.Type, len(d))
+    }
+    qt.dataValidation(t, d[0]["CreationTime"], "2015-01-17 00:00:00")
+    qt.dataValidation(t, d[0]["BirthYear"], int64(1982))
+    qt.dataValidation(t, d[0]["Gender"], "Female")
+    qt.dataValidation(t, d[0]["Nickname"], "Bob")
+
+    // Rows
+    d = []Item{}
+    q = NewQuery(qt.Query.Server)
+    err = q.Select().From("passport_user").Where(q.Eq("UserID", 1000000), q.Or(q.Eq("UserID", 1000001))).Rows(&d)
     if err != nil {
         t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
     }

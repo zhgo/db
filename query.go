@@ -41,7 +41,7 @@ type Query struct {
     Sql map[string]string
 
     // Condition SQL
-    SqlCond string
+    SqlCond []string
 
     //args for Sql
     Args []interface{}
@@ -68,156 +68,184 @@ type Result struct {
     RowsAffected int64
 }
 
+// Condition
+type Condition struct {
+    Sql string
 
+    Args []interface{}
+}
 
 
 // Equal
-func (q *Query) Eq(f string, v interface{}) *Query {
+func (q *Query) Eq(f string, v interface{}) string {
     return q.condition("", f, "=", v)
 }
 
 // Greater than or equal
-func (q *Query) Ge(f string, v interface{}) *Query {
+func (q *Query) Ge(f string, v interface{}) string {
     return q.condition("", f, ">=", v)
 }
 
 // Greater than
-func (q *Query) Gt(f string, v interface{}) *Query {
+func (q *Query) Gt(f string, v interface{}) string {
     return q.condition("", f, ">", v)
 }
 
 // Less than or equal
-func (q *Query) Le(f string, v interface{}) *Query {
+func (q *Query) Le(f string, v interface{}) string {
     return q.condition("", f, "<=", v)
 }
 
 // Less than
-func (q *Query) Lt(f string, v interface{}) *Query {
+func (q *Query) Lt(f string, v interface{}) string {
     return q.condition("", f, "<", v)
 }
 
 // Not equal
-func (q *Query) Ne(f string, v interface{}) *Query {
+func (q *Query) Ne(f string, v interface{}) string {
     return q.condition("", f, "<>", v)
 }
 
 // Like: Simple pattern matching
-func (q *Query) Like(f string, v interface{}) *Query {
+func (q *Query) Like(f string, v interface{}) string {
     return q.condition("", f, "LIKE", v)
 }
 
 // In: Check whether a value is within a set of values
-func (q *Query) In(f string, v ...interface{}) *Query {
+func (q *Query) In(f string, v ...interface{}) string {
     return q.conditionIn("", f, v...)
 }
 
 
 
+// And
+func (q *Query) And(qs ...string) string {
+    return fmt.Sprintf(" AND (%s) ", strings.Join(qs, " "))
+}
+
 // and
-func (q *Query) and(f string, co string, v interface{}) *Query {
+func (q *Query) and(f string, co string, v interface{}) string {
     return q.condition("AND", f, co, v)
 }
 
 // And (Equal)
-func (q *Query) AndEq(f string, v interface{}) *Query {
+func (q *Query) AndEq(f string, v interface{}) string {
     return q.and(f, "=", v)
 }
 
 // And (Greater than or equal)
-func (q *Query) AndGe(f string, v interface{}) *Query {
+func (q *Query) AndGe(f string, v interface{}) string {
     return q.and(f, ">=", v)
 }
 
 // And (Greater than)
-func (q *Query) AndGt(f string, v interface{}) *Query {
+func (q *Query) AndGt(f string, v interface{}) string {
     return q.and(f, ">", v)
 }
 
 // And (Less than or equal)
-func (q *Query) AndLe(f string, v interface{}) *Query {
+func (q *Query) AndLe(f string, v interface{}) string {
     return q.and(f, "<=", v)
 }
 
 // And (Less than)
-func (q *Query) AndLt(f string, v interface{}) *Query {
+func (q *Query) AndLt(f string, v interface{}) string {
     return q.and(f, "<", v)
 }
 
 // And (Not equal)
-func (q *Query) AndNe(f string, v interface{}) *Query {
+func (q *Query) AndNe(f string, v interface{}) string {
     return q.and(f, "<>", v)
 }
 
 // And (Like: Simple pattern matching)
-func (q *Query) AndLike(f string, v interface{}) *Query {
+func (q *Query) AndLike(f string, v interface{}) string {
     return q.and(f, "LIKE", v)
 }
 
 // And (In: Check whether a value is within a set of values)
-func (q *Query) AndIn(f string, v ...interface{}) *Query {
+func (q *Query) AndIn(f string, v ...interface{}) string {
     return q.conditionIn("AND", f, v...)
 }
 
 
 
+// Or
+func (q *Query) Or(qs ...string) string {
+    return fmt.Sprintf(" OR (%s) ", strings.Join(qs, " "))
+}
+
 // or
-func (q *Query) or(f string, co string, v interface{}) *Query {
+func (q *Query) or(f string, co string, v interface{}) string {
     return q.condition("OR", f, co, v)
 }
 
 // Or (Equal)
-func (q *Query) OrEq(f string, v interface{}) *Query {
+func (q *Query) OrEq(f string, v interface{}) string {
     return q.or(f, "=", v)
 }
 
 // Or (Greater than or equal)
-func (q *Query) OrGe(f string, v interface{}) *Query {
+func (q *Query) OrGe(f string, v interface{}) string {
     return q.or(f, ">=", v)
 }
 
 // Or (Greater than)
-func (q *Query) OrGt(f string, v interface{}) *Query {
+func (q *Query) OrGt(f string, v interface{}) string {
     return q.or(f, ">", v)
 }
 
 // Or (Less than or equal)
-func (q *Query) OrLe(f string, v interface{}) *Query {
+func (q *Query) OrLe(f string, v interface{}) string {
     return q.or(f, "<=", v)
 }
 
 // Or (Less than)
-func (q *Query) OrLt(f string, v interface{}) *Query {
+func (q *Query) OrLt(f string, v interface{}) string {
     return q.or(f, "<", v)
 }
 
 // Or (Not equal)
-func (q *Query) OrNe(f string, v interface{}) *Query {
+func (q *Query) OrNe(f string, v interface{}) string {
     return q.or(f, "<>", v)
 }
 
 // Or (Like: Simple pattern matching)
-func (q *Query) OrLike(f string, v interface{}) *Query {
+func (q *Query) OrLike(f string, v interface{}) string {
     return q.or(f, "LIKE", v)
 }
 
 // Or (In: Check whether a value is within a set of values)
-func (q *Query) OrIn(f string, v ...interface{}) *Query {
+func (q *Query) OrIn(f string, v ...interface{}) string {
     return q.conditionIn("OR", f, v...)
 }
 
 
-// Placeholder
-func (q *Query) placeholder() string {
-    q.ArgIndex++
-    return fmt.Sprintf("$%d", q.ArgIndex)
+
+// l Logical
+// f Field
+// co Comparison Operators
+// v Value
+func (q *Query) condition(l string, f string, co string, v interface{}) string {
+    return fmt.Sprintf(" %s %s %s %s ", l, q.quoteField(f), co, q.placeholder(v))
 }
 
-// Quote filed
-func (q *Query) quoteField(f string) string {
-    if strings.Trim(f, " \r\n\t") == "*" {
-        return f
+// l Logical
+// f Field
+// vs Values
+func (q *Query) conditionIn(l string, f string, vs ...interface{}) string {
+    ph := make([]string, len(vs)) // Placeholder
+    for i, v := range vs {
+        ph[i] = q.placeholder(v)
     }
-    return fmt.Sprintf("\"%s\"", strings.Replace(f, ".", "\".\"", -1))
+    return fmt.Sprintf(" %s %s IN (%s) ", l, q.quoteField(f), strings.Join(ph, ", "))
+}
+
+
+
+// Join fields
+func (q *Query) joinFields(fs []string) string {
+    return strings.Join(q.quoteFields(fs), ", ")
 }
 
 // Quote fileds
@@ -228,42 +256,89 @@ func (q *Query) quoteFields(f []string) []string {
     return f
 }
 
-// Join fields
-func (q *Query) joinFields(fs []string) string {
-    return strings.Join(q.quoteFields(fs), ", ")
-}
-
-// l Logical
-// f Field
-// co Comparison Operators
-// v Value
-func (q *Query) condition(l string, f string, co string, v interface{}) *Query {
-    q.SqlCond += fmt.Sprintf(" %s %s %s %s ", l, q.quoteField(f), co, q.placeholder())
-    q.Args = append(q.Args, v)
-    return q
-}
-
-// l Logical
-// f Field
-// vs Values
-func (q *Query) conditionIn(l string, f string, vs ...interface{}) *Query {
-    // Placeholder
-    ph := make([]string, len(vs))
-    for i, v := range vs {
-        ph[i] = q.placeholder()
-        q.Args = append(q.Args, v)
+// Quote filed
+func (q *Query) quoteField(f string) string {
+    if strings.Trim(f, " \r\n\t") == "*" {
+        return f
     }
-    q.SqlCond += fmt.Sprintf(" %s %s IN (%s) ", l, q.quoteField(f), strings.Join(ph, ", "))
-    return q
+    return fmt.Sprintf("\"%s\"", strings.Replace(f, ".", "\".\"", -1))
+}
+
+// Placeholder
+func (q *Query) placeholder(v interface{}) string {
+    q.ArgIndex++
+    q.Args = append(q.Args, v)
+    return fmt.Sprintf("$%d", q.ArgIndex)
 }
 
 
+
+
+// Insert
+func (q *Query) InsertInto(tb string) *Query {
+    q.Type = QueryInsert
+    q.Sql["Insert"] = fmt.Sprintf(" INSERT INTO %s ", q.quoteField(tb))
+    q.current = "Insert"
+    return q
+}
 
 // Set primary field
 func (q *Query) SetPrimary(p string) {
     q.Primary = p
 }
 
+// Fields(Insert)
+func (q *Query) Fields(f ...string) *Query {
+    q.Sql["Fields"] = fmt.Sprintf(" (%s) ", q.joinFields(f))
+    q.current = "Fields"
+    return q
+}
+
+// Values(Insert)
+func (q *Query) Values(vs ...interface{}) *Query {
+    // Placeholder
+    ph := make([]string, len(vs))
+    for i, v := range vs {
+        ph[i] = q.placeholder(v)
+    }
+
+    str, ok := q.Sql["Values"]
+    if ok && len(str) > 0 {
+        q.Sql["Values"] += fmt.Sprintf(" ,(%s) ", strings.Join(ph, ", "))
+    } else {
+        q.Sql["Values"] = fmt.Sprintf(" VALUES(%s) ", strings.Join(ph, ", "))
+    }
+    q.current = "Values"
+    return q
+}
+
+// Update
+func (q *Query) Update(tb string) *Query {
+    q.Type = QueryUpdate
+    q.Sql["Update"] = fmt.Sprintf(" UPDATE %s ", q.quoteField(tb))
+    q.current = "Update"
+    return q
+}
+
+// Set(Update)
+func (q *Query) Set(f string, v interface{}) *Query {
+    str, ok := q.Sql["Set"]
+    if ok && len(str) > 0 {
+        q.Sql["Set"] += fmt.Sprintf(" , %s = %s ", q.quoteField(f), q.placeholder(v))
+    } else {
+        q.Sql["Set"] = fmt.Sprintf(" SET %s = %s ", q.quoteField(f), q.placeholder(v))
+    }
+    q.current = "Set"
+    return q
+}
+
+// Delete
+func (q *Query) DeleteFrom(tb string) *Query {
+    q.Type = QueryDelete
+    q.Sql["Delete"] = fmt.Sprintf(" DELETE FROM %s ", q.quoteField(tb))
+    q.current = "Delete"
+    return q
+}
 
 // Select fields
 func (q *Query) Select(f ...string) *Query {
@@ -317,19 +392,17 @@ func (q *Query) RightJoin(tb string) *Query {
 }
 
 // Join On
-func (q *Query) On(qs ...*Query) *Query {
-    q.Sql["Join"] += fmt.Sprintf(" ON %s ", q.SqlCond)
-    q.SqlCond = ""
+func (q *Query) On(qs ...string) *Query {
+    q.Sql["Join"] += fmt.Sprintf(" ON %s ", strings.Join(qs, " "))
+    q.SqlCond = make([]string, 0)
     q.current = "Join"
     return q
 }
 
-
-
 // Where
-func (q *Query) Where(qs ...*Query) *Query {
-    q.Sql["Where"] = fmt.Sprintf(" WHERE %s ", q.SqlCond)
-    q.SqlCond = ""
+func (q *Query) Where(qs ...string) *Query {
+    q.Sql["Where"] = fmt.Sprintf(" WHERE %s ", strings.Join(qs, " "))
+    q.SqlCond = make([]string, 0)
     q.current = "Where"
     return q
 }
@@ -341,9 +414,9 @@ func (q *Query) GroupBy(f ...string) *Query {
 }
 
 // Having
-func (q *Query) Having(qs ...*Query) *Query {
-    q.Sql["Having"] = fmt.Sprintf(" HAVING %s ", q.SqlCond)
-    q.SqlCond = ""
+func (q *Query) Having(qs ...string) *Query {
+    q.Sql["Having"] = fmt.Sprintf(" HAVING %s ", strings.Join(qs, " "))
+    q.SqlCond = make([]string, 0)
     q.current = "Having"
     return q
 }
@@ -372,69 +445,6 @@ func (q *Query) Limit(offset, rows int64) *Query {
     return q
 }
 
-// Delete
-func (q *Query) DeleteFrom(tb string) *Query {
-    q.Type = QueryDelete
-    q.Sql["Delete"] = fmt.Sprintf(" DELETE FROM %s ", q.quoteField(tb))
-    q.current = "Delete"
-    return q
-}
-
-// Update
-func (q *Query) Update(tb string) *Query {
-    q.Type = QueryUpdate
-    q.Sql["Update"] = fmt.Sprintf(" UPDATE %s ", q.quoteField(tb))
-    q.current = "Update"
-    return q
-}
-
-// Set(Update)
-func (q *Query) Set(f string, v interface{}) *Query {
-    str, ok := q.Sql["Set"]
-    if ok && len(str) > 0 {
-        q.Sql["Set"] += fmt.Sprintf(" , %s = %s ", q.quoteField(f), q.placeholder())
-    } else {
-        q.Sql["Set"] = fmt.Sprintf(" SET %s = %s ", q.quoteField(f), q.placeholder())
-    }
-    q.Args = append(q.Args, v)
-    q.current = "Set"
-    return q
-}
-
-// Insert
-func (q *Query) InsertInto(tb string) *Query {
-    q.Type = QueryInsert
-    q.Sql["Insert"] = fmt.Sprintf(" INSERT INTO %s ", q.quoteField(tb))
-    q.current = "Insert"
-    return q
-}
-
-// Fields(Insert)
-func (q *Query) Fields(f ...string) *Query {
-    q.Sql["Fields"] = fmt.Sprintf(" (%s) ", q.joinFields(f))
-    q.current = "Fields"
-    return q
-}
-
-// Values(Insert)
-func (q *Query) Values(vs ...interface{}) *Query {
-    // Placeholder
-    ph := make([]string, len(vs))
-    for i, v := range vs {
-        ph[i] = q.placeholder()
-        q.Args = append(q.Args, v)
-    }
-
-    str, ok := q.Sql["Values"]
-    if ok && len(str) > 0 {
-        q.Sql["Values"] += fmt.Sprintf(" ,(%s) ", strings.Join(ph, ", "))
-    } else {
-        q.Sql["Values"] = fmt.Sprintf(" VALUES(%s) ", strings.Join(ph, ", "))
-    }
-    q.current = "Values"
-    return q
-}
-
 // Connect all sql part to a corect sql string.
 func (q *Query) ToString() string {
     str := ""
@@ -457,8 +467,7 @@ func (q *Query) mapToInsert(d map[string]interface{}) {
     ph := make([]string, 0)
     for k, v := range d {
         f = append(f, k)
-        ph = append(ph, q.placeholder())
-        q.Args = append(q.Args, v)
+        ph = append(ph, q.placeholder(v))
     }
     q.Sql["Fields"] = fmt.Sprintf(" (%s) ", q.joinFields(f))
     q.Sql["Values"] = fmt.Sprintf(" VALUES(%s) ", strings.Join(ph, ", "))
@@ -469,11 +478,10 @@ func (q *Query) mapToUpdate(d map[string]interface{}) {
     i := 0
     for k, v := range d {
         if i == 0 {
-            q.Sql["Set"] = fmt.Sprintf(" SET %s = %s ", q.quoteField(k), q.placeholder())
+            q.Sql["Set"] = fmt.Sprintf(" SET %s = %s ", q.quoteField(k), q.placeholder(v))
         } else {
-            q.Sql["Set"] += fmt.Sprintf(" , %s = %s ", q.quoteField(k), q.placeholder())
+            q.Sql["Set"] += fmt.Sprintf(" , %s = %s ", q.quoteField(k), q.placeholder(v))
         }
-        q.Args = append(q.Args, v)
         i++
     }
 }
@@ -483,11 +491,10 @@ func (q *Query) mapToWhere(d map[string]interface{}) {
     i := 0
     for k, v := range d {
         if i == 0 {
-            q.Sql["Where"] = fmt.Sprintf(" WHERE %s = %s ", q.quoteField(k), q.placeholder())
+            q.Sql["Where"] = fmt.Sprintf(" WHERE %s = %s ", q.quoteField(k), q.placeholder(v))
         } else {
-            q.Sql["Where"] += fmt.Sprintf(" AND %s = %s ", q.quoteField(k), q.placeholder())
+            q.Sql["Where"] += fmt.Sprintf(" AND %s = %s ", q.quoteField(k), q.placeholder(v))
         }
-        q.Args = append(q.Args, v)
         i++
     }
 }
