@@ -93,7 +93,7 @@ func (qt *QueryTest) Insert(t *testing.T) {
 
 
     // Insert confirm
-    d = make(map[string]interface{})
+    d = make(Item)
     q = NewQuery(qt.Query.Server)
     err = q.Select("*").From("passport_user").Where(q.Eq("UserID", 1000001)).Row(&d)
     if err != nil {

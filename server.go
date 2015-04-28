@@ -250,5 +250,5 @@ func (e *Server) parseParameters(str string, args []interface{}) (string, []inte
 
 // New Server
 func NewServer(name string, typ string, dsn string) *Server {
-    return &Server{Name: name, Type: typ, DSN: dsn}
+    return &Server{Name: typ+name, Type: typ, DSN: dsn}
 }

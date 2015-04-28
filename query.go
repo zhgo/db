@@ -455,7 +455,7 @@ func (q *Query) ToString() string {
 
 
 // Parse map data to insert SQL
-func (q *Query) mapToInsert(d map[string]interface{}) {
+func (q *Query) mapToInsert(d Item) {
     f := make([]string, 0)
     ph := make([]string, 0)
     for k, v := range d {
@@ -467,7 +467,7 @@ func (q *Query) mapToInsert(d map[string]interface{}) {
 }
 
 // Parse map data to update SQL
-func (q *Query) mapToUpdate(d map[string]interface{}) {
+func (q *Query) mapToUpdate(d Item) {
     i := 0
     for k, v := range d {
         if i == 0 {
@@ -480,7 +480,7 @@ func (q *Query) mapToUpdate(d map[string]interface{}) {
 }
 
 // Parse map data to where SQL
-func (q *Query) mapToWhere(d map[string]interface{}) {
+func (q *Query) mapToWhere(d Where) {
     i := 0
     for k, v := range d {
         if i == 0 {
@@ -508,7 +508,7 @@ func (q *Query) Exec(d ...map[string]interface{}) (Result, error) {
         // https://github.com/lib/pq/issues/24
         if q.Server.Type == "postgres" {
             q.Sql["Returning"] = fmt.Sprintf("RETURNING %s", q.quoteField(q.Primary))
-            row := make(map[string]interface{})
+            row := make(Item)
             err := q.Server.Row(&row, q.ToString(), q.Args...)
             if err != nil {
                 return re, err
@@ -555,7 +555,7 @@ func (q *Query) Exec(d ...map[string]interface{}) (Result, error) {
 }
 
 // Row
-func (q *Query) Row(ptr interface{}, d ...map[string]interface{}) error {
+func (q *Query) Row(ptr interface{}, d ...Where) error {
     if q.Server == nil {
         return errors.New("DB config not found")
     }
@@ -566,7 +566,7 @@ func (q *Query) Row(ptr interface{}, d ...map[string]interface{}) error {
 }
 
 // Rows
-func (q *Query) Rows(ptr interface{}, d ...map[string]interface{}) error {
+func (q *Query) Rows(ptr interface{}, d ...Where) error {
     if q.Server == nil {
         return errors.New("DB config not found")
     }

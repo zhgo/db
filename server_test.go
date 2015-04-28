@@ -59,7 +59,7 @@ func (st *ServerTest) Insert(t *testing.T) {
     q := `INSERT INTO "passport_user" ("UserID", "CreationTime", "BirthYear", "Gender", "Nickname") VALUES($1, $2, $3, $4, $5)`
     if st.Server.Type == "postgres" {
         q = `INSERT INTO "passport_user" ("UserID", "CreationTime", "BirthYear", "Gender", "Nickname") VALUES($1, $2, $3, $4, $5) RETURNING *`
-        row := make(map[string]interface{})
+        row := make(Item)
         err := st.Server.Row(&row, q, vs...)
         if err != nil {
             t.Fatalf("[%s]: %v\n", st.Server.Type, err)
@@ -87,7 +87,7 @@ func (st *ServerTest) Insert(t *testing.T) {
 
 
     // Insert confirm
-    d := make(map[string]interface{})
+    d := make(Item)
     q = `SELECT * FROM "passport_user" WHERE "UserID" = $1`
     err := st.Server.Row(&d, q, 1000000)
     if err != nil {
@@ -116,7 +116,7 @@ func (st *ServerTest) Update(t *testing.T) {
 
 
     // Update confirm
-    d := make(map[string]interface{})
+    d := make(Item)
     q = `SELECT * FROM "passport_user" WHERE "UserID" = $1`
     err = st.Server.Row(&d, q, 1000000)
     if err != nil {
@@ -145,7 +145,7 @@ func (st *ServerTest) Delete(t *testing.T) {
 }
 
 func (st *ServerTest) Rows(t *testing.T) {
-    d := []map[string]interface{}{}
+    d := []Item{}
     q := `SELECT * FROM "passport_user" WHERE "UserID" > $1`
     err := st.Server.Rows(&d, q, 1)
     if err != nil {
