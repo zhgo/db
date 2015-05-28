@@ -49,6 +49,7 @@ s := db.NewServer("mysql-1", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=ut
 ## Insert
 
 ```go
+// INSERT INTO table1(BirthYear, Gender, Nickname) VALUES(1980, 'Male', 'Bob')
 q := db.NewQuery(s).InsertInto("table1")
 r, err := q.Fields("BirthYear", "Gender", "Nickname").Values(1980, "Male", "Bob").Exec()
 ```
@@ -58,6 +59,7 @@ r, err := q.Fields("BirthYear", "Gender", "Nickname").Values(1980, "Male", "Bob"
 Or:
 
 ```go
+// INSERT INTO table1(BirthYear, Gender, Nickname) VALUES(1980, 'Male', 'Bob')
 d = db.Item{"BirthYear": 1980, "Gender": "Male", "Nickname": "Bob"}
 r, err = db.NewQuery(s).InsertInto("table1").Exec(d)
 ```
@@ -67,8 +69,12 @@ r, err = db.NewQuery(s).InsertInto("table1").Exec(d)
 ## Update
 
 ```go
+// UPDATE table1 SET BirthYear = 1982, Gender = 'Female', Nickname = 'Bob' WHERE UserID = 1000000
 q := db.NewQuery(s).Update("table1")
-r, err := q.Set("BirthYear", 1982).Set("Gender", "Female").Set("Nickname", "Bob").Where(q.Eq("UserID", 1000000)).Exec()
+q.Set("BirthYear", 1982)
+q.Set("Gender", "Female")
+q.Set("Nickname", "Bob")
+r, err := q.Where(q.Eq("UserID", 1000000)).Exec()
 ```
 
 **Set()** method can be called multiple times to update multiple fields.
@@ -76,6 +82,7 @@ r, err := q.Set("BirthYear", 1982).Set("Gender", "Female").Set("Nickname", "Bob"
 Or:
 
 ```go
+// UPDATE table1 SET BirthYear = 1988, Gender = 'Male', Nickname = 'C语言' WHERE UserID = 1000001
 d = db.Item{"BirthYear": 1988, "Gender": "Male", "Nickname": "C语言"}
 w = db.Where{"UserID": 1000001}
 r, err = db.NewQuery(s).Update("table1").Exec(d, w)
@@ -84,6 +91,7 @@ r, err = db.NewQuery(s).Update("table1").Exec(d, w)
 ## Delete
 
 ```go
+// DELETE FROM table1 WHERE UserID = 1000000
 q := db.NewQuery(s).DeleteFrom("table1")
 r, err := q.Where(q.Eq("UserID", 1000000)).Exec()
 ```
@@ -91,6 +99,7 @@ r, err := q.Where(q.Eq("UserID", 1000000)).Exec()
 Or:
 
 ```go
+// DELETE FROM table1 WHERE UserID = 1000001
 w := db.Where{"UserID": 1000001}
 r, err = db.NewQuery(s).DeleteFrom("table1").Exec(w)
 ```
@@ -98,6 +107,7 @@ r, err = db.NewQuery(s).DeleteFrom("table1").Exec(w)
 ## Select
 
 ```go
+// SELECT * FROM table1 WHERE UserID = 1000001
 d := []db.Item{}
 q := db.NewQuery(s).Select("*")
 err := q.From("table1").Where(q.Eq("UserID", 1000000)).Rows(&d)
@@ -106,6 +116,7 @@ err := q.From("table1").Where(q.Eq("UserID", 1000000)).Rows(&d)
 Or:
 
 ```go
+// SELECT * FROM table1 WHERE UserID = 1000001
 d = make(db.Item)
 w = db.Where{"UserID": 1000001}
 err = db.NewQuery(s).Select("*").From("table1").Row(&d, w)

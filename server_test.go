@@ -166,23 +166,23 @@ func (st *ServerTest) dataValidation(t *testing.T, l, r interface{}) {
     }
 }
 
-func NewServerTest(typ string, dsn string) *ServerTest {
+func testServer(typ string, dsn string) *ServerTest {
     s := ServerTest{}
     s.Server = NewServer(typ, typ, dsn)
     return &s
 }
 
 func TestServer(t *testing.T) {
-    st := NewServerTest("mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
+    st := testServer("mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
     st.Init(t)
     st.Start(t)
 
-    st = NewServerTest("sqlite3", "sqlite3.db")
+    st = testServer("sqlite3", "sqlite3.db")
     st.Init(t)
     st.Start(t)
 
-    st = NewServerTest("postgres", "user=postgres dbname=zhgo sslmode=disable")
-    //st = NewServerTest("postgres", "postgres://LD:@localhost:5432/zhgo?sslmode=verify-full")
+    st = testServer("postgres", "user=postgres dbname=zhgo sslmode=disable")
+    //st = testServer("postgres", "postgres://LD:@localhost:5432/zhgo?sslmode=verify-full")
     st.Init(t)
     st.Start(t)
 }
