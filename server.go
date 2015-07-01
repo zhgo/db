@@ -6,9 +6,9 @@ package db
 
 import (
     "database/sql"
-    _ "github.com/go-sql-driver/mysql"
-    _ "github.com/mxk/go-sqlite/sqlite3"
-    _ "github.com/lib/pq"
+    _ "github.com/zhgo/mysql"
+    _ "github.com/zhgo/postgresql"
+    _ "github.com/zhgo/sqlite/sqlite3"
     "log"
     "reflect"
     "regexp"
