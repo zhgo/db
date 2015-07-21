@@ -44,13 +44,19 @@ import (
 s := db.NewServer("mysql-1", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
 ```
 
+Or:
+
+```go
+s := db.Connect("mysql-1", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
+```
+
 **mysql-1** is connection name. **mysql** is sql driver type. **root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8** is DSN.
 
 ## Insert
 
 ```go
 // INSERT INTO table1(BirthYear, Gender, Nickname) VALUES(1980, 'Male', 'Bob')
-q := db.NewQuery(s).InsertInto("table1")
+q := s.NewQuery().InsertInto("table1")
 r, err := q.Fields("BirthYear", "Gender", "Nickname").Values(1980, "Male", "Bob").Exec()
 ```
 
@@ -61,7 +67,7 @@ Or:
 ```go
 // INSERT INTO table1(BirthYear, Gender, Nickname) VALUES(1980, 'Male', 'Bob')
 d = db.Item{"BirthYear": 1980, "Gender": "Male", "Nickname": "Bob"}
-r, err = db.NewQuery(s).InsertInto("table1").Exec(d)
+r, err = s.NewQuery().InsertInto("table1").Exec(d)
 ```
 
 **d** is a map type.
@@ -70,7 +76,7 @@ r, err = db.NewQuery(s).InsertInto("table1").Exec(d)
 
 ```go
 // UPDATE table1 SET BirthYear = 1982, Gender = 'Female', Nickname = 'Bob' WHERE UserID = 1000000
-q := db.NewQuery(s).Update("table1")
+q := s.NewQuery().Update("table1")
 q.Set("BirthYear", 1982)
 q.Set("Gender", "Female")
 q.Set("Nickname", "Bob")
@@ -85,14 +91,14 @@ Or:
 // UPDATE table1 SET BirthYear = 1988, Gender = 'Male', Nickname = 'C语言' WHERE UserID = 1000001
 d = db.Item{"BirthYear": 1988, "Gender": "Male", "Nickname": "C语言"}
 w = db.Where{"UserID": 1000001}
-r, err = db.NewQuery(s).Update("table1").Exec(d, w)
+r, err = s.NewQuery().Update("table1").Exec(d, w)
 ```
 
 ## Delete
 
 ```go
 // DELETE FROM table1 WHERE UserID = 1000000
-q := db.NewQuery(s).DeleteFrom("table1")
+q := s.NewQuery().DeleteFrom("table1")
 r, err := q.Where(q.Eq("UserID", 1000000)).Exec()
 ```
 
@@ -101,7 +107,7 @@ Or:
 ```go
 // DELETE FROM table1 WHERE UserID = 1000001
 w := db.Where{"UserID": 1000001}
-r, err = db.NewQuery(s).DeleteFrom("table1").Exec(w)
+r, err = s.NewQuery().DeleteFrom("table1").Exec(w)
 ```
 
 ## Select
@@ -109,7 +115,7 @@ r, err = db.NewQuery(s).DeleteFrom("table1").Exec(w)
 ```go
 // SELECT * FROM table1 WHERE UserID = 1000001
 d := []db.Item{}
-q := db.NewQuery(s).Select("*")
+q := s.NewQuery().Select("*")
 err := q.From("table1").Where(q.Eq("UserID", 1000000)).Rows(&d)
 ```
 
@@ -119,7 +125,7 @@ Or:
 // SELECT * FROM table1 WHERE UserID = 1000001
 d = make(db.Item)
 w = db.Where{"UserID": 1000001}
-err = db.NewQuery(s).Select("*").From("table1").Row(&d, w)
+err = s.NewQuery().Select("*").From("table1").Row(&d, w)
 ```
 
 # Copyright
