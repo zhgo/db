@@ -75,21 +75,20 @@ func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, 
 // Type assertions
 func typeAssertion(v interface{}) interface{} {
 	switch v.(type) {
-	case bool:
-		//log.Printf("bool\n")
-		return v.(bool)
-	case int64:
-		//log.Printf("int64\n")
-		return v.(int64)
-	case float64:
-		//log.Printf("float64\n")
-		return v.(float64)
-	case string:
-		//log.Printf("string\n")
-		return v.(string)
 	case []byte:
-		//log.Printf("[]byte\n")
-		return string(v.([]byte))
+		return v.([]byte)
+	case []rune:
+		return v.([]rune)
+	case bool:
+		return v.(bool)
+	case float64:
+		return v.(float64)
+	case int64:
+		return v.(int64)
+	case nil:
+		return nil
+	case string:
+		return v.(string)
 	default:
 		log.Printf("Unexpected type %#v\n", v)
 		return ""
