@@ -49,8 +49,7 @@ func (qt *QueryTest) Start(t *testing.T) {
 
 func (qt *QueryTest) Insert(t *testing.T) {
 	// Insert
-	q := NewQuery(qt.Query.Server)
-	q.InsertInto("passport_user")
+	q := qt.Query.Server.InsertInto("passport_user")
 	q.SetPrimary("UserID") // PostgreSQL compatibility
 	r, err := q.Fields("UserID", "CreationTime", "BirthYear", "Gender", "Nickname").Values(1000000, "2015-01-17 00:00:00", 1980, "Male", "肯·汤普逊").Exec()
 	if err != nil {
@@ -116,8 +115,7 @@ func (qt *QueryTest) Update(t *testing.T) {
 	// Update confirm
 	d := make(Item)
 	w := Where{"UserID": 1000000}
-	q = NewQuery(qt.Query.Server)
-	err = q.Select("*").From("passport_user").Row(&d, w)
+	err = qt.Query.Server.Select("*").From("passport_user").Row(&d, w)
 	if err != nil {
 		t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
 	}
@@ -132,8 +130,7 @@ func (qt *QueryTest) Update(t *testing.T) {
 		"Gender":    "Male",
 		"Nickname":  "C语言"}
 	w = Where{"UserID": 1000001}
-	q = NewQuery(qt.Query.Server)
-	r, err = q.Update("passport_user").Exec(d, w)
+	r, err = qt.Query.Server.Update("passport_user").Exec(d, w)
 	if err != nil {
 		t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
 	}
@@ -167,8 +164,7 @@ func (qt *QueryTest) Delete(t *testing.T) {
 
 	// Delete
 	w := Where{"UserID": 1000001}
-	q = NewQuery(qt.Query.Server)
-	r, err = q.DeleteFrom("passport_user").Exec(w)
+	r, err = qt.Query.Server.DeleteFrom("passport_user").Exec(w)
 	if err != nil {
 		t.Fatalf("[%s]: %v\n", qt.Query.Server.Type, err)
 	}

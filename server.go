@@ -167,6 +167,26 @@ func (e *Server) NewQuery() *Query {
 	return NewQuery(e)
 }
 
+// Insert into
+func (e *Server) InsertInto(tb string) *Query {
+	return NewQuery(e).InsertInto(tb)
+}
+
+// Update
+func (e *Server) Update(tb string) *Query {
+	return NewQuery(e).Update(tb)
+}
+
+// Delete from
+func (e *Server) DeleteFrom(tb string) *Query {
+	return NewQuery(e).DeleteFrom(tb)
+}
+
+// Select
+func (e *Server) Select(f ...string) *Query {
+	return NewQuery(e).Select(f...)
+}
+
 // Execute query, return sql.Rows, rows.Columns
 func (e *Server) rows(sql string, args []interface{}) (*sql.Rows, []string, error) {
 	sql, args = e.parseSQL(sql, args)

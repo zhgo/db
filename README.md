@@ -67,7 +67,7 @@ Or:
 ```go
 // INSERT INTO table1(BirthYear, Gender, Nickname) VALUES(1980, 'Male', 'Bob')
 d = db.Item{"BirthYear": 1980, "Gender": "Male", "Nickname": "Bob"}
-r, err := s.NewQuery().InsertInto("table1").Exec(d)
+r, err := s.InsertInto("table1").Exec(d)
 ```
 
 **d** is a map type.
@@ -76,7 +76,8 @@ r, err := s.NewQuery().InsertInto("table1").Exec(d)
 
 ```go
 // UPDATE table1 SET BirthYear = 1982, Gender = 'Female', Nickname = 'Bob' WHERE UserID = 1000000
-q := s.NewQuery().Update("table1")
+q := s.NewQuery()
+q.Update("table1")
 q.Set("BirthYear", 1982)
 q.Set("Gender", "Female")
 q.Set("Nickname", "Bob")
@@ -91,7 +92,7 @@ Or:
 // UPDATE table1 SET BirthYear = 1988, Gender = 'Male', Nickname = 'C语言' WHERE UserID = 1000001
 d = db.Item{"BirthYear": 1988, "Gender": "Male", "Nickname": "C语言"}
 w = db.Where{"UserID": 1000001}
-r, err := s.NewQuery().Update("table1").Exec(d, w)
+r, err := s.Update("table1").Exec(d, w)
 ```
 
 ## Delete
@@ -107,7 +108,7 @@ Or:
 ```go
 // DELETE FROM table1 WHERE UserID = 1000001
 w := db.Where{"UserID": 1000001}
-r, err := s.NewQuery().DeleteFrom("table1").Exec(w)
+r, err := s.DeleteFrom("table1").Exec(w)
 ```
 
 ## Select
@@ -125,7 +126,7 @@ Or:
 // SELECT * FROM table1 WHERE UserID = 1000001
 d = make(db.Item)
 w = db.Where{"UserID": 1000001}
-err := s.NewQuery().Select("*").From("table1").Row(&d, w)
+err := s.Select("*").From("table1").Row(&d, w)
 ```
 
 # Copyright
