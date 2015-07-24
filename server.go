@@ -21,7 +21,7 @@ type Server struct {
 	// Name
 	Name string
 
-	// Database type: mysql or sqlite3
+	// Database type: mysql postgresql or sqlite3
 	Type string
 
 	// Data Source Name
