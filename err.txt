@@ -1,0 +1,10 @@
+server.go:124: columnsLen is not equal elemTyp.NumField()
+
+
+server.go:114: Error 1054: Unknown column 'COLUMN_NAME, DATA_TYPE' in 'field list'
+
+
+server.go:133: sql: Scan error on column index 4: unsupported driver -> Scan pair: <nil> -> *string
+
+
+server.go:133: sql: Scan error on column index 4: converting string "<nil>" to a int64: strconv.ParseInt: parsing "<nil>": invalid syntax

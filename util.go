@@ -10,12 +10,16 @@ import (
 	"reflect"
 )
 
-// Item
+// Alias of map[string]interface{}
 type Item map[string]interface{}
 
-// Where
+// Alias of []map[string]interface{}
+type Items []map[string]interface{}
+
+// Alias of map[string]interface{}
 type Where map[string]interface{}
 
+// Enviroment: 0, 1, 2, 3
 var Env int8 = 0
 
 // Get scan variables

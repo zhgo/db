@@ -5,31 +5,31 @@
 package db
 
 import (
-    "reflect"
+	"reflect"
 )
 
 // Model struct
 type Model struct {
-    // Module name, as DB name.
-    Module string
+	// Module name, as DB name.
+	Module string
 
-    // table instance
-    Table Table
+	// table instance
+	Table Table
 }
 
 // Table struct
 type Table struct {
-    // Table name
-    Name string
+	// Table name
+	Name string
 
-    // Table primary
-    Primary string
+	// Table primary
+	Primary string
 
-    // All fields, except primary
-    Fields []string
+	// All fields, except primary
+	Fields []string
 
-    // Entity
-    EntityType reflect.Type
+	// Entity
+	EntityType reflect.Type
 }
 
 // Server list
@@ -37,48 +37,48 @@ var Servers = make(map[string]*Server)
 
 // Insert
 func (m *Model) Insert() *Query {
-    q := NewQuery(Servers[m.Module])
-    q.InsertInto(m.Table.Name)
-    return q
+	q := NewQuery(Servers[m.Module])
+	q.InsertInto(m.Table.Name)
+	return q
 }
 
 // Update
 func (m *Model) Update() *Query {
-    q := NewQuery(Servers[m.Module])
-    q.Update(m.Table.Name)
-    return q
+	q := NewQuery(Servers[m.Module])
+	q.Update(m.Table.Name)
+	return q
 }
 
 // Delete
 func (m *Model) Delete() *Query {
-    q := NewQuery(Servers[m.Module])
-    q.DeleteFrom(m.Table.Name)
-    return q
+	q := NewQuery(Servers[m.Module])
+	q.DeleteFrom(m.Table.Name)
+	return q
 }
 
 // Select
 func (m *Model) Select(f ...string) *Query {
-    if len(f) == 0 {
-        f = m.Table.Fields
-    }
-    q := NewQuery(Servers[m.Module])
-    q.Select(f...)
-    q.From(m.Table.Name)
-    return q
+	if len(f) == 0 {
+		f = m.Table.Fields
+	}
+	q := NewQuery(Servers[m.Module])
+	q.Select(f...)
+	q.From(m.Table.Name)
+	return q
 }
 
 // New Model
 func NewModel(module string, table Table) *Model {
-    return &Model{Module: module, Table: table}
+	return &Model{Module: module, Table: table}
 }
 
 // New Table
 func NewTable(tableName string, entity interface{}) Table {
-    p, f := tableFields(entity)
-    t := Table{
-        Name: tableName,
-        Primary: p,
-        Fields: f,
-        EntityType: reflect.ValueOf(entity).Elem().Type()}
-    return t
+	p, f := tableFields(entity)
+	t := Table{
+		Name:       tableName,
+		Primary:    p,
+		Fields:     f,
+		EntityType: reflect.ValueOf(entity).Elem().Type()}
+	return t
 }
