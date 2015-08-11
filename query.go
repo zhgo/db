@@ -234,15 +234,18 @@ func (q *Query) joinFields(fs []string) string {
 
 // Quote fileds
 func (q *Query) quoteFields(f []string) []string {
+	// Slices are passed by reference, copy f to nf.
+	nf := make([]string, len(f))
 	for i, v := range f {
-		f[i] = q.quoteField(v)
+		nf[i] = q.quoteField(v)
 	}
-	return f
+	return nf
 }
 
 // Quote filed
 func (q *Query) quoteField(f string) string {
-	if strings.Trim(f, " \r\n\t") == "*" {
+	fs := strings.Trim(f, " \r\n\t")
+	if fs == "*" || fs == "1" {
 		return f
 	}
 	return fmt.Sprintf("\"%s\"", strings.Replace(f, ".", "\".\"", -1))
@@ -325,6 +328,9 @@ func (q *Query) DeleteFrom(tb string) *Query {
 func (q *Query) Select(f ...string) *Query {
 	q.Type = QuerySelect
 	if len(f) == 0 {
+		// Warring!
+		// If use struct type as return data type, must keep have same sequence
+		// about struct fileds and table fileds.
 		q.Sql["Select"] = " SELECT *"
 	} else {
 		q.Sql["Select"] = fmt.Sprintf(" SELECT %s ", q.joinFields(f))
@@ -424,6 +430,45 @@ func (q *Query) Limit(offset, rows int64) *Query {
 	q.Sql["Limit"] = fmt.Sprintf(" LIMIT %d, %d ", offset, rows)
 	q.current = "Limit"
 	return q
+}
+
+// Parse
+func (q *Query) Parse(c Condition) *Query {
+	conds := []string{q.Eq("1", "1")}
+
+	for k, v := range c.Eq {
+		conds = append(conds, q.AndEq(k, v))
+	}
+
+	for k, v := range c.Ge {
+		conds = append(conds, q.AndGe(k, v))
+	}
+
+	for k, v := range c.Gt {
+		conds = append(conds, q.AndGt(k, v))
+	}
+
+	for k, v := range c.Le {
+		conds = append(conds, q.AndLe(k, v))
+	}
+
+	for k, v := range c.Lt {
+		conds = append(conds, q.AndLt(k, v))
+	}
+
+	for k, v := range c.Ne {
+		conds = append(conds, q.AndNe(k, v))
+	}
+
+	for k, v := range c.Like {
+		conds = append(conds, q.AndLike(k, v))
+	}
+
+	for k, v := range c.In {
+		conds = append(conds, q.AndIn(k, v))
+	}
+
+	return q.Where(conds...)
 }
 
 // Connect all sql part to a corect sql string.

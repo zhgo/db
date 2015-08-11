@@ -4,9 +4,7 @@
 
 package db
 
-import (
-	"reflect"
-)
+import ()
 
 // Model struct
 type Model struct {
@@ -16,24 +14,6 @@ type Model struct {
 	// table instance
 	Table Table
 }
-
-// Table struct
-type Table struct {
-	// Table name
-	Name string
-
-	// Table primary
-	Primary string
-
-	// All fields, except primary
-	Fields []string
-
-	// Entity
-	EntityType reflect.Type
-}
-
-// Server list
-var Servers = make(map[string]*Server)
 
 // Insert
 func (m *Model) Insert() *Query {
@@ -59,8 +39,9 @@ func (m *Model) Delete() *Query {
 // Select
 func (m *Model) Select(f ...string) *Query {
 	if len(f) == 0 {
-		f = m.Table.Fields
+		f = m.Table.AllFields
 	}
+
 	q := NewQuery(Servers[m.Module])
 	q.Select(f...)
 	q.From(m.Table.Name)
@@ -68,17 +49,6 @@ func (m *Model) Select(f ...string) *Query {
 }
 
 // New Model
-func NewModel(module string, table Table) *Model {
-	return &Model{Module: module, Table: table}
-}
-
-// New Table
-func NewTable(tableName string, entity interface{}) Table {
-	p, f := tableFields(entity)
-	t := Table{
-		Name:       tableName,
-		Primary:    p,
-		Fields:     f,
-		EntityType: reflect.ValueOf(entity).Elem().Type()}
-	return t
+func NewModel(module string, table Table) Model {
+	return Model{Module: module, Table: table}
 }

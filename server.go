@@ -31,9 +31,6 @@ type Server struct {
 	Follow string
 }
 
-// Server instance
-var dbObjects map[string]*sql.DB = make(map[string]*sql.DB)
-
 // Execute query, only return sql.Result
 func (e *Server) Exec(sql string, args ...interface{}) (sql.Result, error) {
 	sql, args = e.parseSQL(sql, args)

@@ -10,18 +10,6 @@ import (
 	"reflect"
 )
 
-// Alias of map[string]interface{}
-type Item map[string]interface{}
-
-// Alias of []map[string]interface{}
-type Items []map[string]interface{}
-
-// Alias of map[string]interface{}
-type Where map[string]interface{}
-
-// Enviroment: 0, 1, 2, 3
-var Env int8 = 0
-
 // Get scan variables
 func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, interface{}, []interface{}, error) {
 	typ := reflect.ValueOf(ptr).Type()
@@ -108,10 +96,11 @@ func tableAlias(alias []string) string {
 }
 
 // Reflect struct, construct Field slice
-func tableFields(entity interface{}) (string, []string) {
+func tableFields(entity interface{}) (string, []string, []string) {
 	typ := reflect.Indirect(reflect.ValueOf(entity)).Type()
 	primary := ""
 	fields := make([]string, 0)
+	allFields := make([]string, 0)
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
@@ -122,12 +111,15 @@ func tableFields(entity interface{}) (string, []string) {
 			name = field.Name
 		}
 
-		if field.Tag.Get("pk") == "true" { //!field.Anonymous
+		//!field.Anonymous
+		if field.Tag.Get("pk") == "true" {
 			primary = name
 		} else {
 			fields = append(fields, name)
 		}
+
+		allFields = append(allFields, name)
 	}
 
-	return primary, fields
+	return primary, fields, allFields
 }
