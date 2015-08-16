@@ -1,4 +1,4 @@
-# ORM library for golang
+# ORM library
 
 Supported databases include MySQL, MariaDB, PostgreSQL, Sqlite3.
 

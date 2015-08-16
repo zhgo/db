@@ -68,6 +68,18 @@ type Result struct {
 	RowsAffected int64
 }
 
+// Condition struct
+type Condition struct {
+	Eq   map[string]string   `json:"eq"`
+	Ge   map[string]string   `json:"ge"`
+	Gt   map[string]string   `json:"gt"`
+	Le   map[string]string   `json:"le"`
+	Lt   map[string]string   `json:"lt"`
+	Ne   map[string]string   `json:"ne"`
+	Like map[string]string   `json:"like"`
+	In   map[string][]string `json:"in"`
+}
+
 // Equal
 func (q *Query) Eq(f string, v interface{}) string {
 	return q.condition("", f, "=", v)

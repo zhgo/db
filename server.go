@@ -19,16 +19,16 @@ import (
 // Server struct
 type Server struct {
 	// Name
-	Name string
+	Name string `json:"name"`
 
 	// Database type: mysql postgresql or sqlite3
-	Type string
+	Type string `json:"type"`
 
 	// Data Source Name
-	DSN string
+	DSN string `json:"dsn"`
 
 	// Follow
-	Follow string
+	Follow string `json:"follow"`
 }
 
 // Execute query, only return sql.Result
