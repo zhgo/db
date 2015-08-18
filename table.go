@@ -22,18 +22,22 @@ type Table struct {
 	// All fields
 	AllFields []string
 
+	// json and field property map
+	FiledsMap map[string]string
+
 	// Entity
 	EntityType reflect.Type
 }
 
 // New Table
-func NewTable(tableName string, entity interface{}) Table {
-	p, f, af := tableFields(entity)
-	t := Table{
+func NewTable(tableName string, entity interface{}) *Table {
+	p, f, af, jf := tableFields(entity)
+	return &Table{
 		Name:       tableName,
 		Primary:    p,
 		Fields:     f,
 		AllFields:  af,
-		EntityType: reflect.ValueOf(entity).Elem().Type()}
-	return t
+		FiledsMap:  jf,
+		EntityType: reflect.ValueOf(entity).Elem().Type(),
+	}
 }

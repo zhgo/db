@@ -12,13 +12,11 @@ import (
 
 // Get scan variables
 func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, interface{}, []interface{}, error) {
-	typ := reflect.ValueOf(ptr).Type()
-
+	typ := reflect.TypeOf(ptr)
 	if typ.Kind() != reflect.Ptr {
 		return 0, nil, nil, errors.New("ptr is not a pointer")
 	}
 
-	//log.Printf("%s\n", dataType.Elem().Kind())
 	elemTyp := typ.Elem()
 
 	if isRows { // Rows
@@ -34,8 +32,6 @@ func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, 
 	// element(value) is point to row
 	scan := make([]interface{}, columnsLen)
 
-	//log.Printf("%s\n", elemKind)
-
 	if elemKind == reflect.Struct {
 		if columnsLen != elemTyp.NumField() {
 			return 0, nil, nil, errors.New("columnsLen is not equal elemTyp.NumField()")
@@ -44,7 +40,7 @@ func scanVariables(ptr interface{}, columnsLen int, isRows bool) (reflect.Kind, 
 		row := reflect.New(elemTyp) // Data
 		for i := 0; i < columnsLen; i++ {
 			f := elemTyp.Field(i)
-			if !f.Anonymous { // && f.Tag.Get("json") != ""
+			if !f.Anonymous { // && f.Tag.Get("field") != ""
 				scan[i] = row.Elem().FieldByIndex([]int{i}).Addr().Interface()
 			}
 		}
@@ -96,30 +92,40 @@ func tableAlias(alias []string) string {
 }
 
 // Reflect struct, construct Field slice
-func tableFields(entity interface{}) (string, []string, []string) {
+func tableFields(entity interface{}) (string, []string, []string, map[string]string) {
 	typ := reflect.Indirect(reflect.ValueOf(entity)).Type()
 	primary := ""
 	fields := make([]string, 0)
 	allFields := make([]string, 0)
+	jsonMap := make(map[string]string)
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		var name string
-		if field.Tag.Get("json") != "" {
-			name = field.Tag.Get("json")
+
+		var fd string
+		if field.Tag.Get("field") != "" {
+			fd = field.Tag.Get("field")
 		} else {
-			name = field.Name
+			fd = field.Name
+		}
+
+		var jn string
+		if field.Tag.Get("json") != "" {
+			jn = field.Tag.Get("json")
+		} else {
+			jn = field.Name
 		}
 
 		//!field.Anonymous
 		if field.Tag.Get("pk") == "true" {
-			primary = name
+			primary = fd
 		} else {
-			fields = append(fields, name)
+			fields = append(fields, fd)
 		}
 
-		allFields = append(allFields, name)
+		allFields = append(allFields, fd)
+		jsonMap[jn] = fd
 	}
 
-	return primary, fields, allFields
+	return primary, fields, allFields, jsonMap
 }

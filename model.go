@@ -12,12 +12,13 @@ type Model struct {
 	Module string
 
 	// table instance
-	Table Table
+	Table *Table
 }
 
 // Insert
 func (m *Model) Insert() *Query {
 	q := NewQuery(Servers[m.Module])
+	q.Table = m.Table
 	q.InsertInto(m.Table.Name)
 	return q
 }
@@ -25,6 +26,7 @@ func (m *Model) Insert() *Query {
 // Update
 func (m *Model) Update() *Query {
 	q := NewQuery(Servers[m.Module])
+	q.Table = m.Table
 	q.Update(m.Table.Name)
 	return q
 }
@@ -32,6 +34,7 @@ func (m *Model) Update() *Query {
 // Delete
 func (m *Model) Delete() *Query {
 	q := NewQuery(Servers[m.Module])
+	q.Table = m.Table
 	q.DeleteFrom(m.Table.Name)
 	return q
 }
@@ -43,12 +46,13 @@ func (m *Model) Select(f ...string) *Query {
 	}
 
 	q := NewQuery(Servers[m.Module])
+	q.Table = m.Table
 	q.Select(f...)
 	q.From(m.Table.Name)
 	return q
 }
 
 // New Model
-func NewModel(module string, table Table) Model {
+func NewModel(module string, table *Table) Model {
 	return Model{Module: module, Table: table}
 }

@@ -49,6 +49,9 @@ type Query struct {
 	//args index
 	ArgIndex int
 
+	// If the query object is created by Model, this is will be assigned. optional.
+	Table *Table
+
 	// Current Sql node
 	current string
 }
@@ -260,6 +263,13 @@ func (q *Query) quoteField(f string) string {
 	if fs == "*" || fs == "1" {
 		return f
 	}
+
+	if q.Table != nil {
+		if fm, ok := q.Table.FiledsMap[fs]; ok {
+			f = fm
+		}
+	}
+
 	return fmt.Sprintf("\"%s\"", strings.Replace(f, ".", "\".\"", -1))
 }
 
