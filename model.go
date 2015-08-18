@@ -42,7 +42,7 @@ func (m *Model) Delete() *Query {
 // Select
 func (m *Model) Select(f ...string) *Query {
 	if len(f) == 0 {
-		f = m.Table.AllFields
+		f = m.Table.SelectFields
 	}
 
 	q := NewQuery(Servers[m.Module])

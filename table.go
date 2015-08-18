@@ -19,25 +19,64 @@ type Table struct {
 	// All fields, except primary
 	Fields []string
 
-	// All fields
-	AllFields []string
+	// Fields for select, include primary
+	SelectFields []string
+
+	// Fields for add
+	AddFields []string
+
+	// Fields for update
+	UpdateFields []string
 
 	// json and field property map
 	FiledsMap map[string]string
 
-	// Entity
+	// Entity type
 	EntityType reflect.Type
 }
 
 // New Table
 func NewTable(tableName string, entity interface{}) *Table {
-	p, f, af, jf := tableFields(entity)
+	primary := ""
+	fields := make([]string, 0)
+	selectFields := make([]string, 0)
+	addFields := make([]string, 0)
+	updateFields := make([]string, 0)
+	filedsMap := make(map[string]string)
+	typ := reflect.Indirect(reflect.ValueOf(entity)).Type()
+
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+
+		fd := field.Name
+		if field.Tag.Get("field") != "" {
+			fd = field.Tag.Get("field")
+		}
+
+		jn := field.Name
+		if field.Tag.Get("json") != "" {
+			jn = field.Tag.Get("json")
+		}
+
+		//!field.Anonymous
+		if field.Tag.Get("pk") == "true" {
+			primary = fd
+		} else {
+			fields = append(fields, fd)
+		}
+
+		selectFields = append(selectFields, fd)
+		filedsMap[jn] = fd
+	}
+
 	return &Table{
-		Name:       tableName,
-		Primary:    p,
-		Fields:     f,
-		AllFields:  af,
-		FiledsMap:  jf,
-		EntityType: reflect.ValueOf(entity).Elem().Type(),
+		Name:         tableName,
+		Primary:      primary,
+		Fields:       fields,
+		SelectFields: selectFields,
+		AddFields:    addFields,
+		UpdateFields: updateFields,
+		FiledsMap:    filedsMap,
+		EntityType:   typ,
 	}
 }
