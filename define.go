@@ -5,7 +5,7 @@
 package db
 
 import (
-	"database/sql"
+    "database/sql"
 )
 
 // Alias of map[string]interface{}
