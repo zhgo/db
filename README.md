@@ -41,23 +41,16 @@ import (
 ## Connect to database
 
 ```go
-s := db.NewServer("mysql-1", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
+s := db.Connect("mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
 ```
 
-Or:
-
-```go
-s := db.Connect("mysql-1", "mysql", "root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8")
-```
-
-**mysql-1** is connection name. **mysql** is sql driver type. **root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8** is DSN.
+**mysql** is sql driver type, mysql, postgresql, sqlite. **root:@tcp(127.0.0.1:3306)/zhgo?charset=utf8** is DSN.
 
 ## Insert
 
 ```go
 // INSERT INTO table1(BirthYear, Gender, Nickname) VALUES(1980, 'Male', 'Bob')
-q := s.NewQuery()
-r, err := q.InsertInto("table1").Fields("BirthYear", "Gender", "Nickname").Values(1980, "Male", "Bob").Exec()
+r, err := s.InsertInto("table1").Fields("BirthYear", "Gender", "Nickname").Values(1980, "Male", "Bob").Exec()
 ```
 
 **Values()** method can be called multiple times to insert multiple rows.
